@@ -1,0 +1,26 @@
+1. Clone the repo
+
+2. cd frontend
+
+3. npm install
+
+4. npm run dev
+
+4. cd backend
+
+5. # Create virtual environment
+python3 -m venv venv
+
+6.  Activate it
+# macOS/Linux:
+source venv/bin/activate
+# Windows:
+venv\Scripts\activate
+
+7. pip install Flask Flask-Cors Flask-SQLAlchemy python-dotenv PyMySQL
+
+8. pip list (this will show which dependencies are installed)
+
+9. python app.py
+
+10. deactive venv => deactivate
