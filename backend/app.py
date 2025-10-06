@@ -10,10 +10,10 @@ CORS(app)
 # Home route
 @app.route('/')
 def home():
-    return "✅ Flask server is running!"
+    return jsonify({"message": "Hello from Flask!"})
 
 # Example API route (GET)
-@app.route('/api/hello', methods=['GET'])
+@app.route('/hello', methods=['GET'])
 def hello():
     return jsonify({"message": "Hello from Flask!"})
 
