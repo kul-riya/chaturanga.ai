@@ -1,50 +1,192 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Chess } from "chess.js";
+import React, { useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
+import { Chess } from "chess.js"
 
 export default function ChessBoardComponent() {
-    
-  const [game, setGame] = useState(new Chess());
-  const [boardWidth, setBoardWidth] = useState(400);
-  const containerRef = useRef(null);
 
-  const handleMove = (sourceSquare, targetSquare) => {
-    const move = game.move({
-      from: sourceSquare,
-      to: targetSquare,
-      promotion: "q",
+  // create a chess game using a ref to always have access to the latest game state within closures and maintain the game state across renders
+  const chessGameRef = useRef(new Chess());
+  const chessGame = chessGameRef.current;
+
+  // track the current position of the chess game in state to trigger a re-render of the chessboard
+  const [chessPosition, setChessPosition] = useState(chessGame.fen());
+  const [moveFrom, setMoveFrom] = useState('');
+  const [optionSquares, setOptionSquares] = useState({});
+
+
+  // make a random "CPU" move
+  function makeRandomMove() {
+    // get all possible moves`
+    const possibleMoves = chessGame.moves();
+
+    // exit if the game is over
+    if (chessGame.isGameOver()) {
+      return;
+    }
+
+    // pick a random move
+    const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+
+    // make the move
+    chessGame.move(randomMove);
+
+    // update the position state
+    setChessPosition(chessGame.fen());
+  }
+
+  // get the move options for a square to show valid moves
+  function getMoveOptions(square) {
+    // get the moves for the square
+    const moves = chessGame.moves({
+      square,
+      verbose: true
     });
-    if (!move) return;
-    setGame(new Chess(game.fen()));
-  };
 
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.offsetWidth;
-        setBoardWidth(width);
-      }
+    // if no moves, clear the option squares
+    if (moves.length === 0) {
+      setOptionSquares({});
+      return false;
+    }
+
+    // create a new object to store the option squares
+    const newSquares = {};
+
+    // loop through the moves and set the option squares
+    for (const move of moves) {
+      newSquares[move.to] = {
+        background: chessGame.get(move.to) && chessGame.get(move.to)?.color !== chessGame.get(square)?.color ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)' // larger circle for capturing
+        : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
+        // smaller circle for moving
+        borderRadius: '50%'
+      };
+    }
+
+    // set the square clicked to move from to yellow
+    newSquares[square] = {
+      background: 'rgba(255, 255, 0, 0.4)'
     };
-    updateWidth();
-    window.addEventListener("resize", updateWidth);
-    return () => window.removeEventListener("resize", updateWidth);
-  }, []);
+
+    // set the option squares
+    setOptionSquares(newSquares);
+
+    // return true to indicate that there are move options
+    return true;
+  }
+  function onSquareClick({
+    square,
+    piece
+  }) {
+    // piece clicked to move
+    if (!moveFrom && piece) {
+      // get the move options for the square
+      const hasMoveOptions = getMoveOptions(square);
+
+      // if move options, set the moveFrom to the square
+      if (hasMoveOptions) {
+        setMoveFrom(square);
+      }
+
+      // return early
+      return;
+    }
+
+    // square clicked to move to, check if valid move
+    const moves = chessGame.moves({
+      square: moveFrom,
+      verbose: true
+    });
+    const foundMove = moves.find(m => m.from === moveFrom && m.to === square);
+
+    // not a valid move
+    if (!foundMove) {
+      // check if clicked on new piece
+      const hasMoveOptions = getMoveOptions(square);
+
+      // if new piece, setMoveFrom, otherwise clear moveFrom
+      setMoveFrom(hasMoveOptions ? square : '');
+
+      // return early
+      return;
+    }
+
+    // is normal move
+    try {
+      chessGame.move({
+        from: moveFrom,
+        to: square,
+        promotion: 'q'
+      });
+    } catch {
+      // if invalid, setMoveFrom and getMoveOptions
+      const hasMoveOptions = getMoveOptions(square);
+
+      // if new piece, setMoveFrom, otherwise clear moveFrom
+      if (hasMoveOptions) {
+        setMoveFrom(square);
+      }
+
+      // return early
+      return;
+    }
+
+    // update the position state
+    setChessPosition(chessGame.fen());
+
+    // make random cpu move after a short delay
+    setTimeout(makeRandomMove, 300);
+
+    // clear moveFrom and optionSquares
+    setMoveFrom('');
+    setOptionSquares({});
+  }
+
+  // handle piece drop
+  function onPieceDrop({
+    sourceSquare,
+    targetSquare
+  }) {
+    // type narrow targetSquare potentially being null (e.g. if dropped off board)
+    if (!targetSquare) {
+      return false;
+    }
+
+    // try to make the move according to chess.js logic
+    try {
+      chessGame.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q' // always promote to a queen for example simplicity
+      });
+
+      // update the position state upon successful move to trigger a re-render of the chessboard
+      setChessPosition(chessGame.fen());
+
+      // clear moveFrom and optionSquares
+      setMoveFrom('');
+      setOptionSquares({});
+
+      // make random cpu move after a short delay
+      setTimeout(makeRandomMove, 500);
+
+      // return true as the move was successful
+      return true;
+    } catch {
+      // return false as the move was not successful
+      return false;
+    }
+  }
+
+  // set the chessboard options
+  const chessboardOptions = {
+    onPieceDrop,
+    onSquareClick,
+    position: chessPosition,
+    squareStyles: optionSquares,
+    id: 'click-or-drag-to-move'
+  };  
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width: "90vw",
-        maxWidth: "600px",
-        margin: "20px auto",
-      }}
-    >
-      <Chessboard
-        id="Chessboard"
-        position={game.fen()}
-        onPieceDrop={handleMove}
-        boardWidth={boardWidth}
-      />
-    </div>
-  );
+    <Chessboard options = {chessboardOptions}/>
+  )
+
 }
