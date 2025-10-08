@@ -13,6 +13,8 @@ export default function ChessBoardComponentPvC() {
   const [optionSquares, setOptionSquares] = useState({});
   const [promotion, setPromotion] = useState(null);
   const [winner, setWinner] = useState(null); 
+  const [isCheck, setIsCheck] = useState(false);
+
 
   const pieceIcons = {
     q: FaChessQueen,
@@ -76,6 +78,7 @@ export default function ChessBoardComponentPvC() {
     if (chessGame.isCheckmate()) {
       setWinner(chessGame.turn() === "w" ? "Black" : "White");
     }
+    setIsCheck(chessGame.inCheck());
   }
 
   function restartGame() {
@@ -146,7 +149,18 @@ export default function ChessBoardComponentPvC() {
 
   return (
     <div style={{ position: 'relative' }}>
-      <Chessboard options={chessboardOptions} />
+
+      <div
+        style={{
+          border: isCheck ? "4px solid yellow" : "4px solid transparent",
+          borderRadius: "12px",
+          transition: "border-color 0.3s ease",
+          boxShadow: isCheck ? "0 0 15px 4px rgba(255, 255, 0, 0.6)" : "none",
+        }}
+      >
+        <Chessboard options={chessboardOptions} />
+      </div>
+
 
       {/* Promotion dialog */}
       {promotion && (
