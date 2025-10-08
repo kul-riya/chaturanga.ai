@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { FaChessQueen, FaChessRook, FaChessBishop, FaChessKnight } from "react-icons/fa";
+import CheckmateDialog from "./CheckmateDialog";
 
 export default function ChessBoardComponent() {
   const chessGameRef = useRef(new Chess());
@@ -11,6 +12,8 @@ export default function ChessBoardComponent() {
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
   const [promotion, setPromotion] = useState(null);
+  const [winner, setWinner] = useState(null); 
+
   const pieceIcons = {
     q: FaChessQueen,
     r: FaChessRook,
@@ -20,11 +23,15 @@ export default function ChessBoardComponent() {
 
   function makeRandomMove() {
     const possibleMoves = chessGame.moves();
-    if (chessGame.isGameOver() || possibleMoves.length === 0) return;
+    if (chessGame.isGameOver() || possibleMoves.length === 0) {
+      checkGameOver();
+      return;
+    }
 
     const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
     chessGame.move(randomMove);
     setChessPosition(chessGame.fen());
+    checkGameOver();
   }
 
   function getMoveOptions(square) {
@@ -49,17 +56,33 @@ export default function ChessBoardComponent() {
     return true;
   }
 
-  function handleMove(from, to, promotionPiece = 'q') {
+  function handleMove(from, to, promotionPiece = "q") {
     try {
       chessGame.move({ from, to, promotion: promotionPiece });
       setChessPosition(chessGame.fen());
-      setMoveFrom('');
+      setMoveFrom("");
       setOptionSquares({});
-      setTimeout(makeRandomMove, 300);
+      checkGameOver();
+
+      // make random move if game not over
+      if (!chessGame.isGameOver()) setTimeout(makeRandomMove, 300);
     } catch {
-      setMoveFrom('');
+      setMoveFrom("");
       setOptionSquares({});
     }
+  }
+
+    function checkGameOver() {
+    if (chessGame.isCheckmate()) {
+      setWinner(chessGame.turn() === "w" ? "Black" : "White");
+    }
+  }
+
+  function restartGame() {
+    const newGame = new Chess();
+    chessGameRef.current = newGame;
+    setWinner(null);
+    setChessPosition(newGame.fen());
   }
 
   function onSquareClick({ square, piece }) {
@@ -173,6 +196,9 @@ export default function ChessBoardComponent() {
           </div>
         </div>
       )}
+
+      {/* Checkmate dialog */}
+      {winner && <CheckmateDialog winner={winner} onRestart={restartGame} />}
 
     </div>
   );
