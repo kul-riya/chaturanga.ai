@@ -1,10 +1,11 @@
 import React from "react";
-import ChessBoardComponent from "./components/ChessBoardComponent";
+import ChessBoardComponentPvC from "./components/ChessBoardComponentPvC";
+import ChessBoardComponentPvP from "./components/ChessBoardComponentPvP";
 
 function App() {
   return (
     <>
-      <ChessBoardComponent />
+      <ChessBoardComponentPvP />
     </>
   );
 }

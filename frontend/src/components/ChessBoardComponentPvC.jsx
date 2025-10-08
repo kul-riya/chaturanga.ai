@@ -4,7 +4,7 @@ import { Chess } from "chess.js";
 import { FaChessQueen, FaChessRook, FaChessBishop, FaChessKnight } from "react-icons/fa";
 import CheckmateDialog from "./CheckmateDialog";
 
-export default function ChessBoardComponent() {
+export default function ChessBoardComponentPvC() {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
 
