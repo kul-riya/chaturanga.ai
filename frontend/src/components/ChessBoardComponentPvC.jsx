@@ -14,7 +14,10 @@ export default function ChessBoardComponentPvC({playerColour}) {
   const [promotion, setPromotion] = useState(null);
   const [winner, setWinner] = useState(null); 
   const [isCheck, setIsCheck] = useState(false);
-  const [boardOrientation, setboardOrientaion] = useState(playerColour)
+  const [boardOrientation, setboardOrientaion] = useState(playerColour);
+
+  const [redoStack, setRedoStack] = useState([]);
+
 
 
   const pieceIcons = {
@@ -63,19 +66,62 @@ export default function ChessBoardComponentPvC({playerColour}) {
     try {
       chessGame.move({ from, to, promotion: promotionPiece });
       setChessPosition(chessGame.fen());
-      setMoveFrom("");
+      setMoveFrom('');
       setOptionSquares({});
       checkGameOver();
+
+      setRedoStack([]);
 
       // make random move if game not over
       if (!chessGame.isGameOver()) setTimeout(makeRandomMove, 300);
     } catch {
-      setMoveFrom("");
+      setMoveFrom('');
       setOptionSquares({});
     }
   }
 
-    function checkGameOver() {
+  function undoMove() {
+    const history = chessGame.history({ verbose: true });
+    if (history.length === 0) return;
+
+    const movesToUndo = history.length >= 2 ? 2 : 1; // undo last two moves if possible
+    const undoneMoves = [];
+
+    for (let i = 0; i < movesToUndo; i++) {
+      const move = chessGame.undo();
+      if (move) undoneMoves.unshift(move); // add to redo stack
+    }
+
+    if (undoneMoves.length > 0) {
+      setRedoStack(prev => [...prev, ...undoneMoves]);
+      setChessPosition(chessGame.fen());
+      setWinner(null); 
+      setIsCheck(chessGame.inCheck());
+    }
+  }
+
+
+  function redoMove() {
+    if (redoStack.length === 0) return;
+
+    const movesCopy = [...redoStack];
+    const movesToRedo = movesCopy.length >= 2 ? 2 : 1;
+    const redoneMoves = movesCopy.slice(-movesToRedo);
+
+    for (const move of redoneMoves) {
+      chessGame.move(move);
+    }
+
+    // remove redone moves from redo stack
+    setRedoStack(movesCopy.slice(0, movesCopy.length - movesToRedo));
+    setChessPosition(chessGame.fen());
+    setIsCheck(chessGame.inCheck());
+  }
+
+
+
+
+  function checkGameOver() {
     if (chessGame.isCheckmate()) {
       setWinner(chessGame.turn() === "w" ? "Black" : "White");
     }
@@ -151,6 +197,16 @@ export default function ChessBoardComponentPvC({playerColour}) {
 
   return (
     <div style={{ position: 'relative' }}>
+
+      <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+        <button onClick={undoMove} disabled={chessGame.history().length === 0}>
+          Undo
+        </button>
+        <button onClick={redoMove} disabled={redoStack.length === 0}>
+          Redo
+        </button>
+      </div>
+
 
       <div
         style={{

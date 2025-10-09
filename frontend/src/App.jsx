@@ -5,7 +5,8 @@ import ChessBoardComponentPvP from "./components/ChessBoardComponentPvP";
 function App() {
   return (
     <>
-      <ChessBoardComponentPvP isTimerOn={true} minutes={5} />
+      <ChessBoardComponentPvC/>
+      {/* <ChessBoardComponentPvP isTimerOn={true} minutes={5} /> */}
     </>
   );
 }
