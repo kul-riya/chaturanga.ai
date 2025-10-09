@@ -4,7 +4,7 @@ import { Chess } from "chess.js";
 import { FaChessQueen, FaChessRook, FaChessBishop, FaChessKnight } from "react-icons/fa";
 import CheckmateDialog from "./CheckmateDialog";
 
-export default function ChessBoardComponentPvC() {
+export default function ChessBoardComponentPvC({playerColour}) {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
 
@@ -14,6 +14,7 @@ export default function ChessBoardComponentPvC() {
   const [promotion, setPromotion] = useState(null);
   const [winner, setWinner] = useState(null); 
   const [isCheck, setIsCheck] = useState(false);
+  const [boardOrientation, setboardOrientaion] = useState(playerColour)
 
 
   const pieceIcons = {
@@ -144,7 +145,8 @@ export default function ChessBoardComponentPvC() {
     onSquareClick,
     position: chessPosition,
     squareStyles: optionSquares,
-    id: 'click-or-drag-to-move'
+    boardOrientation,
+    className:"click-or-drag-to-move board-orientation"
   };
 
   return (

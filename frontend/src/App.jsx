@@ -5,7 +5,7 @@ import ChessBoardComponentPvP from "./components/ChessBoardComponentPvP";
 function App() {
   return (
     <>
-      <ChessBoardComponentPvP />
+      <ChessBoardComponentPvC playerColour="white" />
     </>
   );
 }
