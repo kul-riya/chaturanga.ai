@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import {
@@ -8,8 +8,9 @@ import {
   FaChessKnight,
 } from "react-icons/fa";
 import CheckmateDialog from "./CheckmateDialog";
+import TimerEndDialog from "./TimerEndDialog";
 
-export default function ChessBoardComponentPvP() {
+export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 }) {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
 
@@ -17,10 +18,59 @@ export default function ChessBoardComponentPvP() {
   const [moveFrom, setMoveFrom] = useState("");
   const [optionSquares, setOptionSquares] = useState({});
   const [promotion, setPromotion] = useState(null);
-  const [winner, setWinner] = useState(null);
+  const [checkmateWinner, setcheckmateWinner] = useState(null);
   const [turn, setTurn] = useState("White");
   const [isCheck, setIsCheck] = useState(false);
 
+  const [timerWinner, setTimerWinner] = useState(null);
+  const [whiteTime, setWhiteTime] = useState(minutes * 60);
+  const [blackTime, setBlackTime] = useState(minutes * 60);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerEnded, setTimerEnded] = useState(false);
+
+  useEffect(() => {
+    if (!isTimerOn || checkmateWinner || timerEnded) return;
+
+    const interval = setInterval(() => {
+      setTimerRunning((prev) => {
+        if (!prev) return prev;
+        if (chessGame.turn() === "w") {
+          setWhiteTime((prevTime) => {
+            if (prevTime <= 1) {
+              handleTimerEnd("Black");
+              return 0;
+            }
+            return prevTime - 1;
+          });
+        } else {
+          setBlackTime((prevTime) => {
+            if (prevTime <= 1) {
+              handleTimerEnd("White");
+              return 0;
+            }
+            return prevTime - 1;
+          });
+        }
+        return prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isTimerOn, checkmateWinner, timerEnded]);
+
+  function handleTimerEnd(winnerColor) {
+    if (!isTimerOn) return;
+    setTimerWinner(winnerColor);
+    setTimerEnded(true);
+    setTimerRunning(false);
+  }
+
+
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  }
 
   const pieceIcons = {
     q: FaChessQueen,
@@ -65,11 +115,15 @@ export default function ChessBoardComponentPvP() {
       setMoveFrom("");
       setOptionSquares({});
     }
+    if (isTimerOn) {
+      setTimerRunning(true);
+    }
+
   }
 
   function checkGameOver() {
     if (chessGame.isCheckmate()) {
-      setWinner(chessGame.turn() === "w" ? "Black" : "White");
+      setcheckmateWinner(chessGame.turn() === "w" ? "Black" : "White");
     }
     setIsCheck(chessGame.inCheck());
   }
@@ -77,14 +131,30 @@ export default function ChessBoardComponentPvP() {
   function restartGame() {
     const newGame = new Chess();
     chessGameRef.current = newGame;
-    setWinner(null);
     setChessPosition(newGame.fen());
+    setMoveFrom("");
+    setOptionSquares({});
+    setIsCheck(false);
     setTurn("White");
+    setTimerRunning(false);
+
+    // Reset all result states
+    setcheckmateWinner(null);
+    setTimerWinner(null);
+    setTimerEnded(false);
+
+  // reset timers if enabled
+    if (isTimerOn) {
+      setWhiteTime(minutes * 60);
+      setBlackTime(minutes * 60);
+      setTimerRunning(false);
+    }
   }
 
+
   function onSquareClick({ square, piece }) {
-    // prevent clicks during promotion dialog
-    if (promotion) return;
+    // Prevent moves during promotion, after checkmate, or after timer ended
+    if (promotion || checkmateWinner || (isTimerOn && timerEnded)) return;
 
     if (!moveFrom && piece) {
       const hasMoveOptions = getMoveOptions(square);
@@ -93,9 +163,7 @@ export default function ChessBoardComponentPvP() {
     }
 
     const moves = chessGame.moves({ square: moveFrom, verbose: true });
-    const foundMove = moves.find(
-      (m) => m.from === moveFrom && m.to === square
-    );
+    const foundMove = moves.find((m) => m.from === moveFrom && m.to === square);
 
     if (!foundMove) {
       const hasMoveOptions = getMoveOptions(square);
@@ -103,7 +171,6 @@ export default function ChessBoardComponentPvP() {
       return;
     }
 
-    // handle pawn promotion
     if (foundMove.promotion) {
       setPromotion({ from: moveFrom, to: square });
       return;
@@ -112,7 +179,11 @@ export default function ChessBoardComponentPvP() {
     handleMove(moveFrom, square);
   }
 
+
   function onPieceDrop({ sourceSquare, targetSquare }) {
+    // Prevent moves after checkmate or timer ended
+    if (checkmateWinner || (isTimerOn && timerEnded)) return false;
+
     if (!targetSquare) return false;
 
     const moves = chessGame.moves({ square: sourceSquare, verbose: true });
@@ -131,6 +202,7 @@ export default function ChessBoardComponentPvP() {
     return true;
   }
 
+
   function choosePromotion(piece) {
     if (promotion) {
       handleMove(promotion.from, promotion.to, piece);
@@ -148,10 +220,51 @@ export default function ChessBoardComponentPvP() {
 
   return (
     <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
+
       {/* Turn indicator */}
       <div style={{ marginBottom: "10px", fontWeight: "bold", fontSize: "18px" }}>
         Turn: <span style={{ color: turn === "White" ? "#007bff" : "#e63946" }}>{turn}</span>
       </div>
+
+      {/** Timer start button */}
+      {isTimerOn && !timerEnded && (
+        <button
+          onClick={() => setTimerRunning(true)}
+          disabled={timerRunning} // disables after first click
+          style={{
+            marginBottom: "10px",
+            padding: "8px 16px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            backgroundColor: timerRunning ? "#6c757d" : "#007bff", // gray if disabled
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: timerRunning ? "not-allowed" : "pointer",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+            transition: "background-color 0.2s",
+          }}
+        >
+          Start Timer
+        </button>
+      )}
+
+
+      {/** timer display */}
+      {isTimerOn && (
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          width: "300px",
+          marginBottom: "10px",
+          fontWeight: "bold",
+          fontSize: "18px",
+        }}>
+          <div style={{ color: "#007bff" }}>White: {formatTime(whiteTime)}</div>
+          <div style={{ color: "#e63946" }}>Black: {formatTime(blackTime)}</div>
+        </div>
+      )}
+
 
       <div
         style={{
@@ -223,8 +336,21 @@ export default function ChessBoardComponentPvP() {
         </div>
       )}
 
-      {/* Checkmate dialog */}
-      {winner && <CheckmateDialog winner={winner} onRestart={restartGame} />}
+      {/* Timer-based result (only if timer is on) */}
+      {isTimerOn && timerEnded && timerWinner && (
+        <TimerEndDialog
+          winner={timerWinner}
+          onRestart={restartGame}
+        />
+      )}
+
+
+      {/* Normal checkmate result (show only if timer hasn’t ended) */}
+      {(!isTimerOn || !timerEnded) && checkmateWinner && (
+        <CheckmateDialog winner={checkmateWinner} onRestart={restartGame} />
+      )}
+
+
     </div>
   );
 }
