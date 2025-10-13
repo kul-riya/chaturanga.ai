@@ -1,6 +1,6 @@
 import { User, Swords, BrainCircuit, ScrollText, GitBranchPlus, Facebook, Twitter, Instagram } from 'lucide-react';
+import chessBoardImg from '../assets/Landing_page_background_image.png';
 
-const chessBoardImg = 'https://i.imgur.com/gTUmH5p.png';
 const testimonial1Img = 'https://i.imgur.com/I2kWK9z.jpg';
 const testimonial2Img = 'https://i.imgur.com/Lisfn0s.jpg';
 const testimonial3Img = 'https://i.imgur.com/eYw73b2.jpg';
@@ -57,34 +57,74 @@ const Navbar = () => (
 );
 
 const HeroSection = () => (
-  <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 2rem' }}>
-    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4rem', maxWidth: '1200px', width: '100%' }}>
+  <section
+    style={{
+      width: '100%',
+      maxWidth: '1632px',
+      margin: '0 auto',
+      aspectRatio: '1632 / 640',
+      position: 'relative', 
+      backgroundImage: `url(${chessBoardImg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+    }}
+  >
+    {/* Aspect ratio placeholder */}
+    <div style={{ paddingTop: '39.2%' }}></div>
+
+    {/* Content absolutely positioned on top */}
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: '4rem',
+        padding: '2rem',
+      }}
+    >
       <div style={{ flex: 1 }}>
-        <h1 style={{ fontSize: '3rem', color: COLORS.secondary, fontFamily: '"Playfair Display", serif', fontWeight: 'bold' }}>
+        <h1
+          style={{
+            fontSize: '3rem',
+            color: COLORS.secondary,
+            fontFamily: '"Playfair Display", serif',
+            fontWeight: 'bold',
+          }}
+        >
           Chaturanga: The Ancient Game, Reimagined.
         </h1>
         <p style={{ marginTop: '1.5rem', color: '#ccc' }}>
           Harness the wisdom of the ancients and empower modern AI to master true strategies.
         </p>
         <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-          <button style={{
-            backgroundColor: COLORS.primary,
-            color: 'white',
-            fontWeight: 'bold',
-            padding: '0.8rem 2rem',
-            borderRadius: '8px',
-            border: 'none',
-          }}>
+          <button
+            style={{
+              backgroundColor: COLORS.primary,
+              color: 'white',
+              fontWeight: 'bold',
+              padding: '0.8rem 2rem',
+              borderRadius: '8px',
+              border: 'none',
+            }}
+          >
             Begin Your Journey
           </button>
-          <button style={{
-            backgroundColor: 'transparent',
-            border: `2px solid ${COLORS.secondary}`,
-            color: COLORS.secondary,
-            fontWeight: 'bold',
-            padding: '0.8rem 2rem',
-            borderRadius: '8px',
-          }}>
+          <button
+            style={{
+              backgroundColor: 'transparent',
+              border: `2px solid ${COLORS.secondary}`,
+              color: COLORS.secondary,
+              fontWeight: 'bold',
+              padding: '0.8rem 2rem',
+              borderRadius: '8px',
+            }}
+          >
             Discover Your Legacy
           </button>
         </div>
@@ -92,12 +132,13 @@ const HeroSection = () => (
           Available for all major platforms
         </p>
       </div>
-      <div style={{ flex: 1 }}>
-        <img src={chessBoardImg} alt="Chaturanga board" style={{ width: '100%', boxShadow: '0 20px 50px rgba(233,69,96,0.3)' }} />
-      </div>
+
+      <div style={{ flex: 1 }}></div>
     </div>
   </section>
 );
+
+
 
 const features = [
   { icon: <Swords size={40} />, title: 'Masterful Strategy', desc: 'Unveil profound tactics and depths of wisdom.' },

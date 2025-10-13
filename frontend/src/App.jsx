@@ -12,7 +12,8 @@ function App() {
     //   </Routes>
     // </Router>
     <>
-      <ChessBoardComponentPvC />
+      {/* <ChessBoardComponentPvP playerColour={'white'} isTimerOn={true} minutes={1}/> */}
+      <ChessBoardComponentPvC playerColour={'white'}/>
     </>
   );
 }
