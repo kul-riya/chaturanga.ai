@@ -7,13 +7,15 @@ import {
   FaChessBishop,
   FaChessKnight,
 } from "react-icons/fa";
-import CheckmateDialog from "./CheckmateDialog";
-import TimerEndDialog from "./TimerEndDialog";
+import CheckmateDialog from "../components/CheckmateDialog";
+import TimerEndDialog from "../components/TimerEndDialog";
 import backgroundImage from "../assets/stary_night_image.png"
+import { useNavigate } from "react-router-dom";
 
 export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 }) {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
+  const navigate = useNavigate();
 
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
   const [moveFrom, setMoveFrom] = useState("");
@@ -189,7 +191,7 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
   ));
 
   return (
-      <div
+    <div
         style={{
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
@@ -203,6 +205,27 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
           backgroundPosition: "center",
           gap: "30px",
         }}>
+
+      {/* Back Button */}
+      <button
+        onClick={() => navigate("/")}
+        style={{
+          position: "absolute",
+          top: "20px",
+          left: "20px",
+          padding: "8px 14px",
+          backgroundColor: "rgba(13,37,63,0.8)",
+          color: "#f5f0e1",
+          border: "2px solid #f5f0e1",
+          borderRadius: "8px",
+          fontWeight: "bold",
+          cursor: "pointer",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+        }}
+      >
+        ← Back
+      </button>
+
       {/* Chess & Controls */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
         <div style={{ color: "#f5f0e1", fontSize: "20px", fontWeight: "bold" }}>

@@ -1,5 +1,8 @@
 import { User, Swords, BrainCircuit, ScrollText, GitBranchPlus, Facebook, Twitter, Instagram } from 'lucide-react';
 import chessBoardImg from '../assets/Landing_page_background_image.png';
+import React from 'react';
+import { useState } from 'react';
+import ExploreDialog from '../components/ExploreDialog';
 
 const testimonial1Img = 'https://i.imgur.com/I2kWK9z.jpg';
 const testimonial2Img = 'https://i.imgur.com/Lisfn0s.jpg';
@@ -16,16 +19,28 @@ const COLORS = {
 
 const LandingPage = () => {
   return (
-    <div style={{ backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: '"Poppins", sans-serif' }}>
-      <Navbar />
-      <main>
-        <HeroSection />
-        <FeaturesSection />
-        <ExploreSection/>
-        <CTASection />
-      </main>
-      <Footer />
-    </div>
+    <>
+      <style>{`
+        html, body {
+          margin: 0;
+          padding: 0;
+          background-color: #1a1a2e;
+          color: #f0e3ca;
+          font-family: 'Poppins', sans-serif;
+          overflow-x: hidden;
+        }
+      `}</style>
+      <div style={{ backgroundColor: COLORS.bg, color: COLORS.text, fontFamily: '"Poppins", sans-serif' }}>
+        <Navbar />
+        <main>
+          <HeroSection />
+          <FeaturesSection />
+          <ExploreSection/>
+          <CTASection />
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 };
 
@@ -188,43 +203,85 @@ const FeaturesSection = () => (
   </section>
 );
 
+
 const explore = [
-  { name: 'Player VS Player', quote: 'Play with your friends !', image: testimonial1Img },
-  { name: 'Player VS Computer', quote: 'Test your skills with computer !', image: testimonial2Img },
-  { name: 'Explore More', quote: 'Explore more exciting adventures !', image: testimonial3Img },
+  { name: "Player VS Player", quote: "Play with your friends !", image: testimonial1Img, type: "pvp" },
+  { name: "Player VS Computer", quote: "Test your skills with computer !", image: testimonial2Img, type: "pvc" },
+  { name: "Explore More", quote: "Explore more exciting adventures !", image: testimonial3Img, type: "explore" },
 ];
 
-const ExploreSection = () => (
-  <section id="explore" style={{ padding: '5rem 2rem', textAlign: 'center' }}>
-    <h2 style={{ fontSize: '2.5rem', color: COLORS.secondary, fontFamily: '"Playfair Display", serif', marginBottom: '3rem' }}>
-      Explore the features
-    </h2>
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-      gap: '3rem',
-      maxWidth: '1000px',
-      margin: '0 auto',
-    }}>
-      {explore.map((t, i) => (
-        <div key={i}>
-          <a href = "#" >
-            <img src={t.image} alt={t.name} style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              objectFit: 'cover',
-              border: `4px solid ${COLORS.secondary}`,
-              marginBottom: '1rem',
-            }} />
-          </a>
-          <p style={{ color: COLORS.secondary, fontWeight: 'bold' }}>{t.name}</p>
-          <p style={{ color: '#ddd', fontStyle: 'italic' }}>"{t.quote}"</p>
-        </div>
-      ))}
-    </div>
-  </section>
-);
+const ExploreSection = () => {
+  const [dialogType, setDialogType] = useState(null);
+
+  const handleClick = (type) => {
+    if (type === "explore") {
+      window.location.href = "#explore-more";
+    } else {
+      setDialogType(type);
+    }
+  };
+
+  return (
+    <section id="explore" style={{ padding: "5rem 2rem", textAlign: "center" }}>
+      <h2
+        style={{
+          fontSize: "2.5rem",
+          color: COLORS.secondary,
+          fontFamily: '"Playfair Display", serif',
+          marginBottom: "3rem",
+        }}
+      >
+        Explore the features
+      </h2>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+          gap: "3rem",
+          maxWidth: "1000px",
+          margin: "0 auto",
+        }}
+      >
+        {explore.map((t, i) => (
+          <div key={i}>
+            <div onClick={() => handleClick(t.type)} style={{ cursor: "pointer" }}>
+              <img
+                src={t.image}
+                alt={t.name}
+                style={{
+                  width: "120px",
+                  height: "120px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: `4px solid ${COLORS.secondary}`,
+                  marginBottom: "1rem",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = "scale(1.08)";
+                  e.currentTarget.style.boxShadow = `0 0 20px ${COLORS.secondary}`;
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              />
+              <p style={{ color: COLORS.secondary, fontWeight: "bold" }}>{t.name}</p>
+              <p style={{ color: "#ddd", fontStyle: "italic" }}>"{t.quote}"</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {dialogType && (
+        <ExploreDialog type={dialogType} onClose={() => setDialogType(null)} />
+      )}
+    </section>
+  );
+};
+
+
+
 
 const CTASection = () => (
   <section style={{ backgroundColor: COLORS.surface, textAlign: 'center', padding: '5rem 2rem' }}>

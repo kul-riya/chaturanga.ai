@@ -2,12 +2,15 @@ import React, { useRef, useState, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { FaChessQueen, FaChessRook, FaChessBishop, FaChessKnight } from "react-icons/fa";
-import CheckmateDialog from "./CheckmateDialog";
+import CheckmateDialog from "../components/CheckmateDialog";
 import backgroundImage from "../assets/stary_night_image.png";
+import { useNavigate } from "react-router-dom";
 
 export default function ChessBoardComponentPvC({ playerColour }) {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
+
+  const navigate = useNavigate();
 
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
   const [moveFrom, setMoveFrom] = useState("");
@@ -202,6 +205,27 @@ export default function ChessBoardComponentPvC({ playerColour }) {
         gap: "30px",
       }}
     >
+
+      {/* Back Button */}
+      <button
+        onClick={() => navigate("/")}
+        style={{
+          position: "absolute",
+          top: "20px",
+          left: "20px",
+          padding: "8px 14px",
+          backgroundColor: "rgba(13,37,63,0.8)",
+          color: "#f5f0e1",
+          border: "2px solid #f5f0e1",
+          borderRadius: "8px",
+          fontWeight: "bold",
+          cursor: "pointer",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+        }}
+      >
+        ← Back
+      </button>
+
       {/* Chessboard & Controls */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
         <div

@@ -1,20 +1,32 @@
 import React from "react";
-import ChessBoardComponentPvC from "./components/ChessBoardComponentPvC";
-import ChessBoardComponentPvP from "./components/ChessBoardComponentPvP";
+import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-dom";
+import ChessBoardComponentPvC from "./pages/ChessBoardComponentPvC";
+import ChessBoardComponentPvP from "./pages/ChessBoardComponentPvP";
 import LandingPage from "./pages/LandingPage";
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+// Helper component to handle dynamic timer route
+function PvPTimerRoute() {
+  const { minutes } = useParams();
+  const mins = Number(minutes) || 5; // fallback if invalid
+  return <ChessBoardComponentPvP isTimerOn={true} minutes={mins} />;
+}
 
 function App() {
   return (
-    // <Router>
-    //   <Routes>
-    //     <Route path="/" element={<LandingPage />} />
-    //   </Routes>
-    // </Router>
-    <>
-      {/* <ChessBoardComponentPvP playerColour={'white'} isTimerOn={true} minutes={1}/> */}
-      <ChessBoardComponentPvC playerColour={'white'}/>
-    </>
+    <Router>
+      <Routes>
+        {/* Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Player vs Computer */}
+        <Route path="/pvc/white" element={<ChessBoardComponentPvC playerColour="white" />} />
+        <Route path="/pvc/black" element={<ChessBoardComponentPvC playerColour="black" />} />
+
+        {/* Player vs Player */}
+        <Route path="/pvp/notimer" element={<ChessBoardComponentPvP isTimerOn={false} />} />
+        <Route path="/pvp/timer/:minutes" element={<PvPTimerRoute />} />
+      </Routes>
+    </Router>
   );
 }
 
