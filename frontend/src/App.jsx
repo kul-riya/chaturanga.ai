@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-
 import ChessBoardComponentPvC from "./pages/ChessBoardComponentPvC";
 import ChessBoardComponentPvP from "./pages/ChessBoardComponentPvP";
 import LandingPage from "./pages/LandingPage";
+import ChessInfoPage from "./pages/ChessInfoPage";
 
 // Helper component to handle dynamic timer route
 function PvPTimerRoute() {
@@ -17,6 +18,7 @@ function App() {
       <Routes>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/explore" element={<ChessInfoPage />} />
 
         {/* Player vs Computer */}
         <Route path="/pvc/white" element={<ChessBoardComponentPvC playerColour="white" />} />

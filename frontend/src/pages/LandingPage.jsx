@@ -1,8 +1,10 @@
 import { User, Swords, BrainCircuit, ScrollText, GitBranchPlus, Facebook, Twitter, Instagram } from 'lucide-react';
+import { FaUserFriends, FaDesktop, FaCompass } from "react-icons/fa";
 import chessBoardImg from '../assets/Landing_page_background_image.png';
 import React from 'react';
 import { useState } from 'react';
 import ExploreDialog from '../components/ExploreDialog';
+import { useNavigate } from 'react-router-dom';
 
 const testimonial1Img = 'https://i.imgur.com/I2kWK9z.jpg';
 const testimonial2Img = 'https://i.imgur.com/Lisfn0s.jpg';
@@ -71,87 +73,94 @@ const Navbar = () => (
   </header>
 );
 
-const HeroSection = () => (
-  <section
-    style={{
-      width: '100%',
-      maxWidth: '1632px',
-      margin: '0 auto',
-      aspectRatio: '1632 / 640',
-      position: 'relative', 
-      backgroundImage: `url(${chessBoardImg})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-    }}
-  >
-    {/* Aspect ratio placeholder */}
-    <div style={{ paddingTop: '39.2%' }}></div>
 
-    {/* Content absolutely positioned on top */}
-    <div
+function HeroSection() {
+  const navigate = useNavigate();
+
+  return (
+    <section
       style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: '4rem',
-        padding: '2rem',
+        width: "100%",
+        maxWidth: "1632px",
+        margin: "0 auto",
+        aspectRatio: "1632 / 640",
+        position: "relative",
+        backgroundImage: `url(${chessBoardImg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
-      <div style={{ flex: 1 }}>
-        <h1
-          style={{
-            fontSize: '3rem',
-            color: COLORS.secondary,
-            fontFamily: '"Playfair Display", serif',
-            fontWeight: 'bold',
-          }}
-        >
-          Chaturanga: The Ancient Game, Reimagined.
-        </h1>
-        <p style={{ marginTop: '1.5rem', color: '#ccc' }}>
-          Harness the wisdom of the ancients and empower modern AI to master true strategies.
-        </p>
-        <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-          <button
-            style={{
-              backgroundColor: COLORS.primary,
-              color: 'white',
-              fontWeight: 'bold',
-              padding: '0.8rem 2rem',
-              borderRadius: '8px',
-              border: 'none',
-            }}
-          >
-            Begin Your Journey
-          </button>
-          <button
-            style={{
-              backgroundColor: 'transparent',
-              border: `2px solid ${COLORS.secondary}`,
-              color: COLORS.secondary,
-              fontWeight: 'bold',
-              padding: '0.8rem 2rem',
-              borderRadius: '8px',
-            }}
-          >
-            Discover Your Legacy
-          </button>
-        </div>
-        <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#aaa' }}>
-          Available for all major platforms
-        </p>
-      </div>
+      {/* Aspect ratio placeholder */}
+      <div style={{ paddingTop: "39.2%" }}></div>
 
-      <div style={{ flex: 1 }}></div>
-    </div>
-  </section>
-);
+      {/* Content absolutely positioned on top */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: "4rem",
+          padding: "2rem",
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <h1
+            style={{
+              fontSize: "3rem",
+              color: COLORS.secondary,
+              fontFamily: '"Playfair Display", serif',
+              fontWeight: "bold",
+            }}
+          >
+            Chaturanga: The Ancient Game, Reimagined.
+          </h1>
+          <p style={{ marginTop: "1.5rem", color: "#ccc" }}>
+            Harness the wisdom of the ancients and empower modern AI to master true strategies.
+          </p>
+          <div style={{ marginTop: "2rem", display: "flex", gap: "1rem" }}>
+            <button
+              onClick={() => navigate("/explore")}
+              style={{
+                backgroundColor: COLORS.primary,
+                color: "white",
+                fontWeight: "bold",
+                padding: "0.8rem 2rem",
+                borderRadius: "8px",
+                border: "none",
+              }}
+            >
+              Begin Your Journey
+            </button>
+            <button
+              onClick={() => navigate("/explore")}
+              style={{
+                backgroundColor: "transparent",
+                border: `2px solid ${COLORS.secondary}`,
+                color: COLORS.secondary,
+                fontWeight: "bold",
+                padding: "0.8rem 2rem",
+                borderRadius: "8px",
+              }}
+            >
+              Discover Your Legacy
+            </button>
+          </div>
+          <p style={{ marginTop: "1rem", fontSize: "0.9rem", color: "#aaa" }}>
+            Available for all major platforms
+          </p>
+        </div>
+
+        <div style={{ flex: 1 }}></div>
+      </div>
+    </section>
+  );
+}
 
 
 
@@ -205,9 +214,9 @@ const FeaturesSection = () => (
 
 
 const explore = [
-  { name: "Player VS Player", quote: "Play with your friends !", image: testimonial1Img, type: "pvp" },
-  { name: "Player VS Computer", quote: "Test your skills with computer !", image: testimonial2Img, type: "pvc" },
-  { name: "Explore More", quote: "Explore more exciting adventures !", image: testimonial3Img, type: "explore" },
+  { name: "Player VS Player", quote: "Play with your friends!", icon: FaUserFriends, type: "pvp" },
+  { name: "Player VS Computer", quote: "Test your skills with computer!", icon: FaDesktop, type: "pvc" },
+  { name: "Explore More", quote: "Explore more exciting adventures!", icon: FaCompass, type: "explore" },
 ];
 
 const ExploreSection = () => {
@@ -242,35 +251,41 @@ const ExploreSection = () => {
           margin: "0 auto",
         }}
       >
-        {explore.map((t, i) => (
-          <div key={i}>
-            <div onClick={() => handleClick(t.type)} style={{ cursor: "pointer" }}>
-              <img
-                src={t.image}
-                alt={t.name}
-                style={{
-                  width: "120px",
-                  height: "120px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  border: `4px solid ${COLORS.secondary}`,
-                  marginBottom: "1rem",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = "scale(1.08)";
-                  e.currentTarget.style.boxShadow = `0 0 20px ${COLORS.secondary}`;
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              />
-              <p style={{ color: COLORS.secondary, fontWeight: "bold" }}>{t.name}</p>
-              <p style={{ color: "#ddd", fontStyle: "italic" }}>"{t.quote}"</p>
+        {explore.map((t, i) => {
+          const Icon = t.icon;
+          return (
+            <div key={i}>
+              <div onClick={() => handleClick(t.type)} style={{ cursor: "pointer" }}>
+                <div
+                  style={{
+                    fontSize: "6rem",
+                    color: COLORS.primary,
+                    borderRadius: "50%",
+                    width: "140px",
+                    height: "140px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 1rem auto",
+                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = "scale(1.1)";
+                    e.currentTarget.style.boxShadow = `0 0 20px ${COLORS.primary}`;
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  <Icon />
+                </div>
+                <p style={{ color: COLORS.secondary, fontWeight: "bold" }}>{t.name}</p>
+                <p style={{ color: "#ddd", fontStyle: "italic" }}>"{t.quote}"</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {dialogType && (
@@ -283,25 +298,31 @@ const ExploreSection = () => {
 
 
 
-const CTASection = () => (
-  <section style={{ backgroundColor: COLORS.surface, textAlign: 'center', padding: '5rem 2rem' }}>
-    <h2 style={{ color: COLORS.secondary, fontSize: '2.5rem', fontFamily: '"Playfair Display", serif' }}>
-      Embark on Your Quest for Mastery.
-    </h2>
-    <button style={{
-      backgroundColor: COLORS.primary,
-      color: 'white',
-      fontWeight: 'bold',
-      padding: '1rem 3rem',
-      borderRadius: '8px',
-      border: 'none',
-      marginTop: '1.5rem',
-    }}>
-      Begin Your Journey Now
-    </button>
-    <p style={{ color: '#aaa', marginTop: '1rem' }}>Free access to foundational strategies.</p>
-  </section>
-);
+
+function CTASection() { 
+  const navigate = useNavigate();
+  return (
+    <section style={{ backgroundColor: COLORS.surface, textAlign: 'center', padding: '5rem 2rem' }}>
+      <h2 style={{ color: COLORS.secondary, fontSize: '2.5rem', fontFamily: '"Playfair Display", serif' }}>
+        Embark on Your Quest for Mastery.
+      </h2>
+      <button 
+        onClick={() => navigate("/explore")}
+        style={{
+          backgroundColor: COLORS.primary,
+          color: 'white',
+          fontWeight: 'bold',
+          padding: '1rem 3rem',
+          borderRadius: '8px',
+          border: 'none',
+          marginTop: '1.5rem',
+      }}>
+        Begin Your Journey Now
+      </button>
+      <p style={{ color: '#aaa', marginTop: '1rem' }}>Free access to foundational strategies.</p>
+    </section>
+  )
+};
 
 const Footer = () => (
   <footer style={{ backgroundColor: '#00000050', padding: '2rem', textAlign: 'center', color: '#aaa' }}>

@@ -9,7 +9,7 @@ import {
 } from "react-icons/fa";
 import CheckmateDialog from "../components/CheckmateDialog";
 import TimerEndDialog from "../components/TimerEndDialog";
-import backgroundImage from "../assets/stary_night_image.png"
+import backgroundImage from "../assets/stary_night_image.png";
 import { useNavigate } from "react-router-dom";
 
 export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 }) {
@@ -30,27 +30,21 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
   const [blackTime, setBlackTime] = useState(minutes * 60);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerEnded, setTimerEnded] = useState(false);
+  const [boardWidth, setBoardWidth] = useState(Math.min(window.innerWidth * 0.8, 420));
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [boardRotation, setBoardRotation] = useState(0); // 0, 90, 180, 270
 
   const pieceIcons = { q: FaChessQueen, r: FaChessRook, b: FaChessBishop, n: FaChessKnight };
 
-  const [boardWidth, setBoardWidth] = useState(Math.min(window.innerWidth * 0.8, 420));
-
+  // Handle window resize
   useEffect(() => {
-    const handleResize = () => setBoardWidth(Math.min(window.innerWidth * 0.8, 420));
+    const handleResize = () => {
+      setBoardWidth(Math.min(window.innerWidth * 0.8, 420));
+      setIsMobile(window.innerWidth < 768);
+    };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-
-
 
   // Timer logic
   useEffect(() => {
@@ -58,6 +52,7 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
 
     const interval = setInterval(() => {
       if (!timerRunning) return;
+
       if (chessGame.turn() === "w") {
         setWhiteTime(prev => {
           if (prev <= 1) { handleTimerEnd("Black"); return 0; }
@@ -86,6 +81,7 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
+  // Move highlighting
   const getMoveOptions = (square) => {
     const mv = chessGame.moves({ square, verbose: true });
     if (mv.length === 0) { 
@@ -96,16 +92,15 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
     for (const move of mv) {
       newSquares[move.to] = {
         background: chessGame.get(move.to) && chessGame.get(move.to).color !== chessGame.get(square).color
-          ? "radial-gradient(circle, rgba(255, 255, 150, 0.8) 85%, transparent 85%)" // capture square
-          : "radial-gradient(circle, rgba(255, 255, 150, 0.6) 25%, transparent 25%)", // normal move
+          ? "radial-gradient(circle, rgba(255, 255, 150, 0.8) 85%, transparent 85%)"
+          : "radial-gradient(circle, rgba(255, 255, 150, 0.6) 25%, transparent 25%)",
         borderRadius: "50%",
       };
     }
-    newSquares[square] = { background: "rgba(255, 255, 150, 0.4)" }; // selected square
+    newSquares[square] = { background: "rgba(255, 255, 150, 0.4)" };
     setOptionSquares(newSquares);
     return true;
   };
-
 
   const handleMove = (from, to, promotionPiece = "q") => {
     try {
@@ -131,9 +126,7 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
   };
 
   const checkGameOver = () => {
-    if (chessGame.isCheckmate()) {
-      setCheckmateWinner(chessGame.turn() === "w" ? "Black" : "White");
-    }
+    if (chessGame.isCheckmate()) setCheckmateWinner(chessGame.turn() === "w" ? "Black" : "White");
     setIsCheck(chessGame.inCheck());
   };
 
@@ -151,8 +144,10 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
     setTimerEnded(false);
     setTimerRunning(false);
     if (isTimerOn) { setWhiteTime(minutes * 60); setBlackTime(minutes * 60); }
+    setBoardRotation(0);
   };
 
+  // Handle click and drag moves
   const onSquareClick = ({ square, piece }) => {
     if (promotion || checkmateWinner || (isTimerOn && timerEnded)) return;
     if (!moveFrom && piece) { const hasMoveOptions = getMoveOptions(square); if (hasMoveOptions) setMoveFrom(square); return; }
@@ -174,6 +169,7 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
   };
 
   const choosePromotion = (piece) => { if (promotion) { handleMove(promotion.from, promotion.to, piece); setPromotion(null); } };
+  
   const chessboardOptions = { onPieceDrop, onSquareClick, position: chessPosition, squareStyles: optionSquares, id: "pvp-board" };
 
   const renderMovesTable = () => moves.map((move, i) => (
@@ -191,20 +187,20 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
   ));
 
   return (
-    <div
-        style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          justifyContent: "center",
-          alignItems: isMobile ? "center" : "flex-start",
-          minHeight: "100vh",
-          padding: "20px",
-          backgroundColor: "#162447",
-          backgroundImage: `url(${backgroundImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          gap: "30px",
-        }}>
+    <div style={{
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      justifyContent: "center",
+      alignItems: isMobile ? "center" : "flex-start",
+      minHeight: "100vh",
+      padding: "20px",
+      backgroundColor: "#162447",
+      backgroundImage: `url(${backgroundImage})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      gap: "30px",
+      position: "relative"
+    }}>
 
       {/* Back Button */}
       <button
@@ -222,11 +218,9 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
           cursor: "pointer",
           boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
         }}
-      >
-        ← Back
-      </button>
+      >← Back</button>
 
-      {/* Chess & Controls */}
+      {/* Chessboard & Controls */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
         <div style={{ color: "#f5f0e1", fontSize: "20px", fontWeight: "bold" }}>
           Turn: <span style={{ color: turn === "White" ? "#4ea6ff" : "#ff4d4d" }}>{turn}</span>
@@ -252,33 +246,26 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
           <div style={{ color: "#ff4d4d" }}>Black: {formatTime(blackTime)}</div>
         </div>}
 
-        <div
-          style={{
-            border: isCheck ? "4px solid yellow" : "4px solid transparent",
-            borderRadius: "12px",
-            transition: "border-color 0.3s",
-            boxShadow: isCheck
-              ? "0 0 20px 4px rgba(255,255,0,0.6)"
-              : "0 4px 12px rgba(0,0,0,0.4)",
-            width: boardWidth,
-            height: boardWidth,
-            margin: "auto",
-          }}
-        >
+        {/* Chessboard container with rotation */}
+        <div style={{
+          border: isCheck ? "4px solid yellow" : "4px solid transparent",
+          borderRadius: "12px",
+          transition: "border-color 0.3s, transform 0.5s",
+          boxShadow: isCheck ? "0 0 20px 4px rgba(255,255,0,0.6)" : "0 4px 12px rgba(0,0,0,0.4)",
+          width: boardWidth,
+          height: boardWidth,
+          margin: "auto",
+          transform: `rotate(${boardRotation}deg)`,
+        }}>
           <Chessboard options={chessboardOptions} boardWidth={boardWidth} />
         </div>
 
-
-
-        <button onClick={restartGame} style={{
-          padding: "6px 12px",
-          marginTop: "6px",
-          cursor: "pointer",
-          borderRadius: "6px",
-          backgroundColor: "#0d253f",
-          color: "#f5f0e1",
-          border: "2px solid #f5f0e1"
-        }}>Restart</button>
+        {/* Rotation Buttons */}
+        <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+          <button onClick={() => setBoardRotation((prev) => (prev + 90) % 360)} style={{ padding: "6px 12px", cursor: "pointer" }}>Rotate 90°</button>
+          <button onClick={() => setBoardRotation((prev) => (prev + 180) % 360)} style={{ padding: "6px 12px", cursor: "pointer" }}>Rotate 180°</button>
+          <button onClick={restartGame} style={{ padding: "6px 12px", cursor: "pointer" }}>Restart</button>
+        </div>
       </div>
 
       {/* Moves Panel */}
@@ -336,6 +323,7 @@ export default function ChessBoardComponentPvP({ isTimerOn = false, minutes = 5 
         </div>
       )}
 
+      {/* Dialogs */}
       {isTimerOn && timerEnded && timerWinner && <TimerEndDialog winner={timerWinner} onRestart={restartGame} />}
       {(!isTimerOn || !timerEnded) && checkmateWinner && <CheckmateDialog winner={checkmateWinner} onRestart={restartGame} />}
     </div>

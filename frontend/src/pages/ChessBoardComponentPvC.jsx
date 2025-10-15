@@ -6,10 +6,9 @@ import CheckmateDialog from "../components/CheckmateDialog";
 import backgroundImage from "../assets/stary_night_image.png";
 import { useNavigate } from "react-router-dom";
 
-export default function ChessBoardComponentPvC({ playerColour }) {
+export default function ChessBoardComponentPvC({ playerColour = "white" }) {
   const chessGameRef = useRef(new Chess());
   const chessGame = chessGameRef.current;
-
   const navigate = useNavigate();
 
   const [chessPosition, setChessPosition] = useState(chessGame.fen());
@@ -18,7 +17,8 @@ export default function ChessBoardComponentPvC({ playerColour }) {
   const [promotion, setPromotion] = useState(null);
   const [winner, setWinner] = useState(null);
   const [isCheck, setIsCheck] = useState(false);
-  const [boardOrientation, setBoardOrientation] = useState(playerColour);
+  const [boardOrientation, setBoardOrientation] = useState(playerColour); // white/black
+  const [boardRotation, setBoardRotation] = useState(0); // degrees: 0, 90, 180, 270
   const [redoStack, setRedoStack] = useState([]);
   const [moveList, setMoveList] = useState([]);
 
@@ -26,6 +26,9 @@ export default function ChessBoardComponentPvC({ playerColour }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   const pieceIcons = { q: FaChessQueen, r: FaChessRook, b: FaChessBishop, n: FaChessKnight };
+
+  const humanColor = playerColour[0]; // 'w' or 'b'
+  const computerColor = humanColor === "w" ? "b" : "w";
 
   useEffect(() => {
     const handleResize = () => {
@@ -36,18 +39,7 @@ export default function ChessBoardComponentPvC({ playerColour }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const makeRandomMove = () => {
-    const possibleMoves = chessGame.moves();
-    if (chessGame.isGameOver() || possibleMoves.length === 0) {
-      checkGameOver();
-      return;
-    }
-    const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-    const move = chessGame.move(randomMove);
-    if (move) setMoveList((prev) => [...prev, formatMove(move)]);
-    setChessPosition(chessGame.fen());
-    checkGameOver();
-  };
+  const formatMove = (move) => `${move.from}-${move.to}${move.promotion ? `=${move.promotion}` : ""}`;
 
   const getMoveOptions = (square) => {
     const moves = chessGame.moves({ square, verbose: true });
@@ -55,7 +47,6 @@ export default function ChessBoardComponentPvC({ playerColour }) {
       setOptionSquares({});
       return false;
     }
-
     const newSquares = {};
     for (const move of moves) {
       newSquares[move.to] = {
@@ -71,82 +62,32 @@ export default function ChessBoardComponentPvC({ playerColour }) {
     return true;
   };
 
-  const formatMove = (move) => `${move.from}-${move.to}${move.promotion ? `=${move.promotion}` : ""}`;
-
-  const handleMove = (from, to, promotionPiece = "q") => {
-    try {
-      const move = chessGame.move({ from, to, promotion: promotionPiece });
-      if (move) setMoveList((prev) => [...prev, formatMove(move)]);
-
-      setChessPosition(chessGame.fen());
-      setMoveFrom("");
-      setOptionSquares({});
-      checkGameOver();
-      setRedoStack([]);
-
-      if (!chessGame.isGameOver()) setTimeout(makeRandomMove, 300);
-    } catch {
-      setMoveFrom("");
-      setOptionSquares({});
-    }
-  };
-
-  const undoMove = () => {
-    const history = chessGame.history({ verbose: true });
-    if (history.length === 0) return;
-
-    const movesToUndo = history.length >= 2 ? 2 : 1;
-    const undoneMoves = [];
-
-    for (let i = 0; i < movesToUndo; i++) {
-      const move = chessGame.undo();
-      if (move) undoneMoves.unshift(move);
-    }
-
-    if (undoneMoves.length > 0) {
-      setRedoStack((prev) => [...prev, ...undoneMoves]);
-      setMoveList((prev) => prev.slice(0, prev.length - undoneMoves.length));
-      setChessPosition(chessGame.fen());
-      setWinner(null);
-      setIsCheck(chessGame.inCheck());
-    }
-  };
-
-  const redoMove = () => {
-    if (redoStack.length === 0) return;
-    const movesCopy = [...redoStack];
-    const movesToRedo = movesCopy.length >= 2 ? 2 : 1;
-    const redoneMoves = movesCopy.slice(-movesToRedo);
-
-    for (const move of redoneMoves) chessGame.move(move);
-
-    setRedoStack(movesCopy.slice(0, movesCopy.length - movesToRedo));
-    setMoveList((prev) => [...prev, ...redoneMoves.map(formatMove)]);
-    setChessPosition(chessGame.fen());
-    setIsCheck(chessGame.inCheck());
-  };
-
   const checkGameOver = () => {
     if (chessGame.isCheckmate()) setWinner(chessGame.turn() === "w" ? "Black" : "White");
     setIsCheck(chessGame.inCheck());
   };
 
-  const restartGame = () => {
-    const newGame = new Chess();
-    chessGameRef.current = newGame;
-    setWinner(null);
-    setMoveList([]);
-    setRedoStack([]);
-    setChessPosition(newGame.fen());
+  const handleMove = (from, to, promotionPiece = "q") => {
+    const move = chessGame.move({ from, to, promotion: promotionPiece });
+    if (move) {
+      setMoveList((prev) => [...prev, formatMove(move)]);
+      setChessPosition(chessGame.fen());
+      setMoveFrom("");
+      setOptionSquares({});
+      setPromotion(null);
+      checkGameOver();
+    }
   };
 
   const onSquareClick = ({ square, piece }) => {
-    if (promotion) return;
+    if (promotion || winner || chessGame.turn() !== humanColor) return;
+
     if (!moveFrom && piece) {
       const hasMoveOptions = getMoveOptions(square);
       if (hasMoveOptions) setMoveFrom(square);
       return;
     }
+
     const moves = chessGame.moves({ square: moveFrom, verbose: true });
     const foundMove = moves.find((m) => m.from === moveFrom && m.to === square);
     if (!foundMove) {
@@ -154,22 +95,27 @@ export default function ChessBoardComponentPvC({ playerColour }) {
       setMoveFrom(hasMoveOptions ? square : "");
       return;
     }
+
     if (foundMove.promotion) {
       setPromotion({ from: moveFrom, to: square });
       return;
     }
+
     handleMove(moveFrom, square);
   };
 
   const onPieceDrop = ({ sourceSquare, targetSquare }) => {
-    if (!targetSquare) return false;
+    if (!targetSquare || promotion || winner || chessGame.turn() !== humanColor) return false;
+
     const moves = chessGame.moves({ square: sourceSquare, verbose: true });
     const foundMove = moves.find((m) => m.from === sourceSquare && m.to === targetSquare);
     if (!foundMove) return false;
+
     if (foundMove.promotion) {
       setPromotion({ from: sourceSquare, to: targetSquare });
       return false;
     }
+
     handleMove(sourceSquare, targetSquare);
     return true;
   };
@@ -181,13 +127,76 @@ export default function ChessBoardComponentPvC({ playerColour }) {
     }
   };
 
-  const chessboardOptions = {
-    onPieceDrop,
-    onSquareClick,
-    position: chessPosition,
-    squareStyles: optionSquares,
-    boardOrientation,
+  // Computer move
+  useEffect(() => {
+    if (!winner && chessGame.turn() === computerColor) {
+      const timeout = setTimeout(() => {
+        const possibleMoves = chessGame.moves();
+        if (possibleMoves.length === 0) return;
+        const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        const move = chessGame.move(randomMove);
+        if (move) {
+          setMoveList((prev) => [...prev, formatMove(move)]);
+          setChessPosition(chessGame.fen());
+          setMoveFrom("");
+          setOptionSquares({});
+          checkGameOver();
+        }
+      }, 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [chessPosition, winner]);
+
+  const undoMove = () => {
+    const history = chessGame.history({ verbose: true });
+    if (history.length === 0) return;
+    const movesToUndo = history.length >= 2 ? 2 : 1;
+    const undoneMoves = [];
+    for (let i = 0; i < movesToUndo; i++) {
+      const move = chessGame.undo();
+      if (move) undoneMoves.unshift(move);
+    }
+    if (undoneMoves.length > 0) {
+      setRedoStack((prev) => [...prev, ...undoneMoves]);
+      setMoveList((prev) => prev.slice(0, prev.length - undoneMoves.length));
+      setChessPosition(chessGame.fen());
+      setWinner(null);
+      setIsCheck(chessGame.inCheck());
+      setMoveFrom("");
+      setOptionSquares({});
+    }
   };
+
+  const redoMove = () => {
+    if (redoStack.length === 0) return;
+    const movesCopy = [...redoStack];
+    const movesToRedo = movesCopy.length >= 2 ? 2 : 1;
+    const redoneMoves = movesCopy.slice(-movesToRedo);
+    for (const move of redoneMoves) chessGame.move(move);
+    setRedoStack(movesCopy.slice(0, movesCopy.length - movesToRedo));
+    setMoveList((prev) => [...prev, ...redoneMoves.map(formatMove)]);
+    setChessPosition(chessGame.fen());
+    setIsCheck(chessGame.inCheck());
+    setMoveFrom("");
+    setOptionSquares({});
+  };
+
+  const restartGame = () => {
+    const newGame = new Chess();
+    chessGameRef.current = newGame;
+    setWinner(null);
+    setMoveList([]);
+    setRedoStack([]);
+    setChessPosition(newGame.fen());
+    setMoveFrom("");
+    setOptionSquares({});
+  };
+
+  // Rotation handlers
+  const rotate90 = () => setBoardRotation((prev) => (prev + 90) % 360);
+  const rotate180 = () => setBoardRotation((prev) => (prev + 180) % 360);
+
+  const chessboardOptions = { onPieceDrop, onSquareClick, position: chessPosition, squareStyles: optionSquares, boardOrientation };
 
   return (
     <div
@@ -203,9 +212,9 @@ export default function ChessBoardComponentPvC({ playerColour }) {
         backgroundSize: "cover",
         backgroundPosition: "center",
         gap: "30px",
+        position: "relative",
       }}
     >
-
       {/* Back Button */}
       <button
         onClick={() => navigate("/")}
@@ -237,19 +246,19 @@ export default function ChessBoardComponentPvC({ playerColour }) {
             width: boardWidth,
             height: boardWidth,
             margin: "auto",
+            transform: `rotate(${boardRotation}deg)`,
+            transition: "transform 0.5s",
           }}
         >
           <Chessboard options={chessboardOptions} boardWidth={boardWidth} />
         </div>
 
         <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
-          <button onClick={undoMove} disabled={chessGame.history().length === 0}>
-            Undo
-          </button>
-          <button onClick={redoMove} disabled={redoStack.length === 0}>
-            Redo
-          </button>
+          <button onClick={undoMove} disabled={chessGame.history().length === 0}>Undo</button>
+          <button onClick={redoMove} disabled={redoStack.length === 0}>Redo</button>
           <button onClick={restartGame}>Restart</button>
+          <button onClick={rotate90}>Rotate 90°</button>
+          <button onClick={rotate180}>Rotate 180°</button>
         </div>
       </div>
 
@@ -271,11 +280,7 @@ export default function ChessBoardComponentPvC({ playerColour }) {
         {moveList.length === 0 ? (
           <div style={{ textAlign: "center", color: "#ccc" }}>No moves yet</div>
         ) : (
-          <ol style={{ paddingLeft: "20px" }}>
-            {moveList.map((mv, idx) => (
-              <li key={idx}>{mv}</li>
-            ))}
-          </ol>
+          <ol style={{ paddingLeft: "20px" }}>{moveList.map((mv, idx) => <li key={idx}>{mv}</li>)}</ol>
         )}
       </div>
 
@@ -300,24 +305,9 @@ export default function ChessBoardComponentPvC({ playerColour }) {
         >
           <p style={{ marginBottom: "10px", fontWeight: "bold", color: "#ff4d4d" }}>Choose Promotion</p>
           <div style={{ display: "flex", gap: "15px" }}>
-            {["q", "r", "b", "n"].map((piece) => {
-              const Icon = pieceIcons[piece];
-              return (
-                <button
-                  key={piece}
-                  onClick={() => choosePromotion(piece)}
-                  style={{
-                    border: "2px solid #ff4d4d",
-                    borderRadius: "8px",
-                    padding: "10px",
-                    backgroundColor: "#ffe6e6",
-                    cursor: "pointer",
-                    fontSize: "28px",
-                  }}
-                >
-                  <Icon />
-                </button>
-              );
+            {["q","r","b","n"].map(p => {
+              const Icon = pieceIcons[p];
+              return <button key={p} onClick={() => choosePromotion(p)} style={{border:"2px solid #ff4d4d", borderRadius:"8px", padding:"10px", backgroundColor:"#ffe6e6", cursor:"pointer", fontSize:"28px"}}><Icon /></button>
             })}
           </div>
         </div>
