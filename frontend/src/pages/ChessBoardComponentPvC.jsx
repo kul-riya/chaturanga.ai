@@ -17,8 +17,8 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
   const [promotion, setPromotion] = useState(null);
   const [winner, setWinner] = useState(null);
   const [isCheck, setIsCheck] = useState(false);
-  const [boardOrientation, setBoardOrientation] = useState(playerColour); // white/black
-  const [boardRotation, setBoardRotation] = useState(0); // degrees: 0, 90, 180, 270
+  const [boardOrientation, setBoardOrientation] = useState(playerColour);
+  const [boardRotation, setBoardRotation] = useState(0);
   const [redoStack, setRedoStack] = useState([]);
   const [moveList, setMoveList] = useState([]);
 
@@ -27,8 +27,19 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
 
   const pieceIcons = { q: FaChessQueen, r: FaChessRook, b: FaChessBishop, n: FaChessKnight };
 
-  const humanColor = playerColour[0]; // 'w' or 'b'
+  const humanColor = playerColour[0];
   const computerColor = humanColor === "w" ? "b" : "w";
+
+  // 🎨 Available board themes
+  const boardThemes = {
+    classic: { light: "#f0d9b5", dark: "#b58863" },
+    forest: { light: "#eeeed2", dark: "#769656" },
+    ocean: { light: "#cbe4f9", dark: "#2c7da0" },
+    midnight: { light: "#b0b0b0", dark: "#2b2b2b" },
+    ivory: { light: "#fffaf0", dark: "#c0a060" },
+  };
+
+  const [theme, setTheme] = useState("classic");
 
   useEffect(() => {
     const handleResize = () => {
@@ -192,11 +203,18 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
     setOptionSquares({});
   };
 
-  // Rotation handlers
   const rotate90 = () => setBoardRotation((prev) => (prev + 90) % 360);
   const rotate180 = () => setBoardRotation((prev) => (prev + 180) % 360);
 
-  const chessboardOptions = { onPieceDrop, onSquareClick, position: chessPosition, squareStyles: optionSquares, boardOrientation };
+  const chessboardOptions = {
+    onPieceDrop,
+    onSquareClick,
+    position: chessPosition,
+    squareStyles: optionSquares,
+    boardOrientation,
+    customDarkSquareStyle: { backgroundColor: boardThemes[theme].dark },
+    customLightSquareStyle: { backgroundColor: boardThemes[theme].light },
+  };
 
   return (
     <div
@@ -215,7 +233,6 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
         position: "relative",
       }}
     >
-      {/* Back Button */}
       <button
         onClick={() => navigate("/")}
         style={{
@@ -237,20 +254,61 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
 
       {/* Chessboard & Controls */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-        <div
-          style={{
-            border: isCheck ? "4px solid yellow" : "4px solid transparent",
-            borderRadius: "12px",
-            transition: "border-color 0.3s ease",
-            boxShadow: isCheck ? "0 0 20px 4px rgba(255,255,0,0.6)" : "0 4px 12px rgba(0,0,0,0.4)",
-            width: boardWidth,
-            height: boardWidth,
-            margin: "auto",
-            transform: `rotate(${boardRotation}deg)`,
-            transition: "transform 0.5s",
+      <div
+        style={{
+          border: isCheck ? "4px solid yellow" : "4px solid transparent",
+          borderRadius: "12px",
+          transition: "border-color 0.3s ease, transform 0.5s",
+          boxShadow: isCheck ? "0 0 20px 4px rgba(255,255,0,0.6)" : "0 4px 12px rgba(0,0,0,0.4)",
+          width: boardWidth,
+          height: boardWidth,
+          margin: "auto",
+          transform: `rotate(${boardRotation}deg)`,
+        }}
+      >
+        <Chessboard
+          key={`${theme}-${boardOrientation}-${boardRotation}`} // 👈 force re-render when theme changes
+          id={`chessboard-${theme}`} // 👈 unique ID helps
+          position={chessPosition}
+          onPieceDrop={onPieceDrop}
+          onSquareClick={onSquareClick}
+          squareStyles={optionSquares}
+          boardOrientation={boardOrientation}
+          customDarkSquareStyle={{
+            backgroundColor: boardThemes[theme].dark,
+            transition: "background-color 0.4s ease", // smooth fade
           }}
-        >
-          <Chessboard options={chessboardOptions} boardWidth={boardWidth} />
+          customLightSquareStyle={{
+            backgroundColor: boardThemes[theme].light,
+            transition: "background-color 0.4s ease",
+          }}
+          boardWidth={boardWidth}
+        />
+      </div>
+
+
+        {/* 🎨 Theme Selector */}
+        <div style={{ marginTop: "10px", display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
+          <label style={{ color: "#f5f0e1", fontWeight: "bold" }}>Theme:</label>
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #ccc",
+              backgroundColor: "#f5f0e1",
+              color: "#162447",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            {Object.keys(boardThemes).map((key) => (
+              <option key={key} value={key}>
+                {key.charAt(0).toUpperCase() + key.slice(1)}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
@@ -262,7 +320,7 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
         </div>
       </div>
 
-      {/* Move list panel */}
+      {/* Move list */}
       <div
         style={{
           width: "220px",
@@ -284,7 +342,7 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
         )}
       </div>
 
-      {/* Promotion Dialog */}
+      {/* Promotion dialog */}
       {promotion && (
         <div
           style={{
@@ -305,9 +363,24 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
         >
           <p style={{ marginBottom: "10px", fontWeight: "bold", color: "#ff4d4d" }}>Choose Promotion</p>
           <div style={{ display: "flex", gap: "15px" }}>
-            {["q","r","b","n"].map(p => {
+            {["q", "r", "b", "n"].map((p) => {
               const Icon = pieceIcons[p];
-              return <button key={p} onClick={() => choosePromotion(p)} style={{border:"2px solid #ff4d4d", borderRadius:"8px", padding:"10px", backgroundColor:"#ffe6e6", cursor:"pointer", fontSize:"28px"}}><Icon /></button>
+              return (
+                <button
+                  key={p}
+                  onClick={() => choosePromotion(p)}
+                  style={{
+                    border: "2px solid #ff4d4d",
+                    borderRadius: "8px",
+                    padding: "10px",
+                    backgroundColor: "#ffe6e6",
+                    cursor: "pointer",
+                    fontSize: "28px",
+                  }}
+                >
+                  <Icon />
+                </button>
+              );
             })}
           </div>
         </div>
