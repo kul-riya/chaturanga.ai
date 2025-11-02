@@ -1,14 +1,3 @@
-/************************************************\
-
-               Mailbox Chess Engine
-                      (0x88)
-
-                        by
-
-                 Code Monkey King
-
-\************************************************/
-
 // headers
 #include <stdio.h>
 #include <string.h>
