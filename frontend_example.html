@@ -1,0 +1,29 @@
+<!-- frontend_example.html -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Chess API Demo</title></head>
+<body>
+<h3>Make a move (example)</h3>
+<button id="moveBtn">Send sample move</button>
+<script>
+document.getElementById('moveBtn').onclick = async () => {
+  const resp = await fetch('/games/1/moves', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      move_number: 4,
+      side: 'W',
+      player_id: 1,
+      san: 'O-O',
+      uci: 'e1g1',
+      move_time_ms: 9000,
+      engine_eval: 25,
+      engine_suggested_move: 'O-O'
+    })
+  });
+  const data = await resp.json();
+  alert(JSON.stringify(data, null, 2));
+}
+</script>
+</body>
+</html>
