@@ -60,7 +60,7 @@ const Navbar = () => (
       alignItems: 'center',
     }}
   >
-    <a href="#" style={{ fontSize: '1.8rem', fontWeight: 'bold', color: COLORS.secondary, fontFamily: '"Playfair Display", serif' }}>
+    <a href="/" style={{ fontSize: '1.8rem', fontWeight: 'bold', color: COLORS.secondary, fontFamily: '"Playfair Display", serif' }}>
       Chaturanga
     </a>
     <nav style={{ display: 'flex', gap: '2rem' }}>
@@ -76,7 +76,7 @@ const Navbar = () => (
 
 function HeroSection() {
   const navigate = useNavigate();
-
+  const [hoveredButton, setHoveredButton] = useState(null);
   return (
     <section
       style={{
@@ -124,28 +124,45 @@ function HeroSection() {
             Harness the wisdom of the ancients and empower modern AI to master true strategies.
           </p>
           <div style={{ marginTop: "2rem", display: "flex", gap: "1rem" }}>
+            {/* Primary Button */}
             <button
               onClick={() => navigate("/explore")}
+              onMouseEnter={() => setHoveredButton("primary")}
+              onMouseLeave={() => setHoveredButton(null)}
               style={{
-                backgroundColor: COLORS.primary,
-                color: "white",
+                backgroundColor:
+                  hoveredButton === "primary" ? "transparent" : COLORS.primary,
+                color: hoveredButton === "primary" ? COLORS.primary : "white",
                 fontWeight: "bold",
                 padding: "0.8rem 2rem",
                 borderRadius: "8px",
-                border: "none",
+                border:
+                  hoveredButton === "primary"
+                    ? `2px solid ${COLORS.primary}`
+                    : "none",
+                transition: "all 0.3s ease",
+                cursor: "pointer",
               }}
             >
               Begin Your Journey
             </button>
+
+            {/* Secondary Button */}
             <button
               onClick={() => navigate("/explore")}
+              onMouseEnter={() => setHoveredButton("secondary")}
+              onMouseLeave={() => setHoveredButton(null)}
               style={{
-                backgroundColor: "transparent",
-                border: `2px solid ${COLORS.secondary}`,
-                color: COLORS.secondary,
+                backgroundColor:
+                  hoveredButton === "secondary" ? COLORS.secondary : "transparent",
+                color:
+                  hoveredButton === "secondary" ? "white" : COLORS.secondary,
                 fontWeight: "bold",
                 padding: "0.8rem 2rem",
                 borderRadius: "8px",
+                border: `2px solid ${COLORS.secondary}`,
+                transition: "all 0.3s ease",
+                cursor: "pointer",
               }}
             >
               Discover Your Legacy
@@ -224,7 +241,7 @@ const ExploreSection = () => {
 
   const handleClick = (type) => {
     if (type === "explore") {
-      window.location.href = "#explore-more";
+      window.location.href = "/explore";
     } else {
       setDialogType(type);
     }
