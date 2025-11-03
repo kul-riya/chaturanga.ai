@@ -6,6 +6,7 @@ import CheckmateDialog from "../components/CheckmateDialog";
 import backgroundImage from "../assets/stary_night_image.png";
 import { useNavigate } from "react-router-dom";
 import { createPlayer, createGame, recordMove, updateGameResult, updateGameOpening, findOrCreateOpening, getPlayer, ensureComputerPlayer } from "../services/api";
+import { chessEngineService } from '../services/chessEngineService';
 
 export default function ChessBoardComponentPvC({ playerColour = "white" }) {
   const chessGameRef = useRef(new Chess());
@@ -35,6 +36,9 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
 
   const [boardWidth, setBoardWidth] = useState(Math.min(window.innerWidth * 0.8, 420));
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [engineReady, setEngineReady] = useState(false);
+  const [engineThinking, setEngineThinking] = useState(false);
+  const [engineError, setEngineError] = useState(null);
 
   const pieceIcons = { q: FaChessQueen, r: FaChessRook, b: FaChessBishop, n: FaChessKnight };
 
@@ -64,6 +68,28 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
       }
     };
     ensureComputer();
+  }, []);
+
+
+  // Check engine health on mount
+  useEffect(() => {
+    const checkEngine = async () => {
+      const isReady = await chessEngineService.checkHealth();
+      setEngineReady(isReady);
+      if (!isReady) {
+        setEngineError('Chess engine server not running. Using random moves as fallback.');
+        console.warn('Chess engine offline - falling back to random moves');
+      } else {
+        setEngineError(null);
+        console.log('Chess engine ready');
+      }
+    };
+    
+    checkEngine();
+    
+    // Check health every 30 seconds
+    const interval = setInterval(checkEngine, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const initializeGame = async (humanPlayerId) => {
@@ -376,18 +402,55 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
     }
   };
 
-  // Computer move effect
+  // Computer move effect with engine integration
   useEffect(() => {
     if (winner || !currentGameId || chessGame.turn() !== computerColor) {
       return;
     }
 
     const makeComputerMove = async () => {
-      const possibleMoves = chessGame.moves();
-      if (possibleMoves.length === 0) return;
-
-      const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-      const move = chessGame.move(randomMove);
+      setEngineThinking(true);
+      
+      let move = null;
+      
+      // Try to use engine if available
+      if (engineReady) {
+        try {
+          const currentFen = chessGame.fen();
+          const result = await chessEngineService.getBestMove(currentFen, 4);
+          
+          if (result && result.move) {
+            // Parse engine move format (e.g., "e2e4" or "e7e8q")
+            const engineMove = result.move;
+            const from = engineMove.substring(0, 2);
+            const to = engineMove.substring(2, 4);
+            const promotion = engineMove.length > 4 ? engineMove[4] : undefined;
+            
+            console.log(`Engine move: ${engineMove}, Score: ${result.score}`);
+            
+            move = chessGame.move({ from, to, promotion });
+            
+            if (!move) {
+              console.error('Engine returned invalid move, falling back to random');
+            }
+          }
+        } catch (error) {
+          console.error('Engine error:', error);
+          setEngineError('Engine error - using random move');
+        }
+      }
+      
+      // Fallback to random move if engine failed or unavailable
+      if (!move) {
+        const possibleMoves = chessGame.moves();
+        if (possibleMoves.length === 0) {
+          setEngineThinking(false);
+          return;
+        }
+        const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        move = chessGame.move(randomMove);
+        console.log('Random move:', randomMove);
+      }
       
       if (move) {
         console.log("Computer move:", move);
@@ -415,11 +478,13 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
         // Check game state
         await checkGameOver();
       }
+      
+      setEngineThinking(false);
     };
 
     const timeout = setTimeout(makeComputerMove, 500);
     return () => clearTimeout(timeout);
-  }, [chessPosition, winner, currentGameId, computerColor]);
+  }, [chessPosition, winner, currentGameId, computerColor, engineReady]);
 
   const undoMove = () => {
     const history = chessGame.history({ verbose: true });
@@ -611,6 +676,66 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
       >
         ← Back
       </button>
+
+      {/* Engine Status Indicators */}
+      {!engineReady && (
+        <div
+          style={{
+            position: "absolute",
+            top: "70px",
+            left: "20px",
+            padding: "10px 15px",
+            backgroundColor: "rgba(255,150,0,0.9)",
+            color: "white",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+            fontSize: "12px",
+          }}
+        >
+          ⚠️ Engine Offline (Random Moves)
+        </div>
+      )}
+
+      {engineThinking && (
+        <div
+          style={{
+            position: "absolute",
+            top: "70px",
+            right: "20px",
+            padding: "10px 15px",
+            backgroundColor: "rgba(50,150,255,0.9)",
+            color: "white",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+          }}
+        >
+          🤔 Engine thinking...
+        </div>
+      )}
+
+      {engineError && engineReady && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "20px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            padding: "10px 20px",
+            backgroundColor: "rgba(255,100,100,0.9)",
+            color: "white",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+            maxWidth: "80%",
+            textAlign: "center",
+            fontSize: "14px",
+          }}
+        >
+          {engineError}
+        </div>
+      )}
 
       {/* Chessboard & Controls */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
