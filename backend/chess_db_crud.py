@@ -42,17 +42,39 @@ class ChessDBCRUD:
     
     def create_player(self, name: str, rating: Optional[int] = None, country: Optional[str] = None) -> int:
         """Create a new player and return the player ID"""
-        query = "INSERT INTO players (name, rating, country) VALUES (%s, %s, %s)"
-        params = (name, rating, country)
-        self._execute_query(query, params)
-        connection = self.db_config.get_connection()
+        connection = None
         try:
+            connection = self.db_config.get_connection()
+            
             with connection.cursor() as cursor:
-                result = cursor.fetchone()
-                print(result)
-                return result['id']
+                # Insert the player
+                query = "INSERT INTO players (name, rating, country) VALUES (%s, %s, %s)"
+                params = (name, rating, country)
+                cursor.execute(query, params)
+                
+                # Get the auto-increment ID
+                player_id = cursor.lastrowid
+                
+                connection.commit()
+                return player_id
+        except Error as e:
+            print(f"Database error creating player: {e}")
+            print(f"Error type: {type(e)}")
+            if connection:
+                connection.rollback()
+            raise
+        except Exception as e:
+            print(f"Unexpected error creating player: {e}")
+            print(f"Error type: {type(e)}")
+            import traceback
+            traceback.print_exc()
+            if connection:
+                connection.rollback()
+            raise
         finally:
-            connection.close()
+            if connection:
+                connection.close()
+                print("Connection closed")
     
     def get_player(self, player_id: int) -> Optional[Dict]:
         """Get a player by ID"""
