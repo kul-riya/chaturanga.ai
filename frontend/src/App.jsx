@@ -1,9 +1,10 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-dom";
-import ChessBoardComponentPvC from "./pages/ChessBoardComponentPvC";
+import ChessBoardComponentPvC from "./pages/ChessBoardComponentPvC-riya";
 import ChessBoardComponentPvP from "./pages/ChessBoardComponentPvP";
 import LandingPage from "./pages/LandingPage";
 import ChessInfoPage from "./pages/ChessInfoPage";
+import SQLConsolePage from "./pages/SQLConsolePage";
 
 // Helper component to handle dynamic timer route
 function PvPTimerRoute() {
@@ -27,6 +28,8 @@ function App() {
         {/* Player vs Player */}
         <Route path="/pvp/notimer" element={<ChessBoardComponentPvP isTimerOn={false} />} />
         <Route path="/pvp/timer/:minutes" element={<PvPTimerRoute />} />
+
+        <Route path="/sql" element={<SQLConsolePage />} />  
       </Routes>
     </Router>
   );

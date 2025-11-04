@@ -6,6 +6,7 @@ import CheckmateDialog from "../components/CheckmateDialog";
 import backgroundImage from "../assets/stary_night_image.png";
 import { useNavigate } from "react-router-dom";
 import { createPlayer, createGame, recordMove, updateGameResult, updateGameOpening, findOrCreateOpening, getPlayer, ensureComputerPlayer } from "../services/api";
+import { chessEngineService } from '../services/chessEngineService';
 
 export default function ChessBoardComponentPvC({ playerColour = "white" }) {
   const chessGameRef = useRef(new Chess());
@@ -35,22 +36,15 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
 
   const [boardWidth, setBoardWidth] = useState(Math.min(window.innerWidth * 0.8, 420));
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [engineReady, setEngineReady] = useState(false);
+  const [engineThinking, setEngineThinking] = useState(false);
+  const [engineError, setEngineError] = useState(null);
 
   const pieceIcons = { q: FaChessQueen, r: FaChessRook, b: FaChessBishop, n: FaChessKnight };
 
   const humanColor = playerColour[0];
   const computerColor = humanColor === "w" ? "b" : "w";
 
-  // 🎨 Available board themes
-  const boardThemes = {
-    classic: { light: "#f0d9b5", dark: "#b58863" },
-    forest: { light: "#eeeed2", dark: "#769656" },
-    ocean: { light: "#cbe4f9", dark: "#2c7da0" },
-    midnight: { light: "#b0b0b0", dark: "#2b2b2b" },
-    ivory: { light: "#fffaf0", dark: "#c0a060" },
-  };
-
-  const [theme, setTheme] = useState("classic");
 
   useEffect(() => {
     const handleResize = () => {
@@ -74,6 +68,28 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
       }
     };
     ensureComputer();
+  }, []);
+
+
+  // Check engine health on mount
+  useEffect(() => {
+    const checkEngine = async () => {
+      const isReady = await chessEngineService.checkHealth();
+      setEngineReady(isReady);
+      if (!isReady) {
+        setEngineError('Chess engine server not running. Using random moves as fallback.');
+        console.warn('Chess engine offline - falling back to random moves');
+      } else {
+        setEngineError(null);
+        console.log('Chess engine ready');
+      }
+    };
+    
+    checkEngine();
+    
+    // Check health every 30 seconds
+    const interval = setInterval(checkEngine, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const initializeGame = async (humanPlayerId) => {
@@ -305,7 +321,7 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
     return true;
   };
 
-  const onSquareClick = (square) => {
+  const onSquareClick = ({ square }) => {
     if (promotion || winner || !currentGameId) return;
     
     // Only allow human to move on their turn
@@ -386,18 +402,55 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
     }
   };
 
-  // Computer move effect
+  // Computer move effect with engine integration
   useEffect(() => {
     if (winner || !currentGameId || chessGame.turn() !== computerColor) {
       return;
     }
 
     const makeComputerMove = async () => {
-      const possibleMoves = chessGame.moves();
-      if (possibleMoves.length === 0) return;
-
-      const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-      const move = chessGame.move(randomMove);
+      setEngineThinking(true);
+      
+      let move = null;
+      
+      // Try to use engine if available
+      if (engineReady) {
+        try {
+          const currentFen = chessGame.fen();
+          const result = await chessEngineService.getBestMove(currentFen, 4);
+          
+          if (result && result.move) {
+            // Parse engine move format (e.g., "e2e4" or "e7e8q")
+            const engineMove = result.move;
+            const from = engineMove.substring(0, 2);
+            const to = engineMove.substring(2, 4);
+            const promotion = engineMove.length > 4 ? engineMove[4] : undefined;
+            
+            console.log(`Engine move: ${engineMove}, Score: ${result.score}`);
+            
+            move = chessGame.move({ from, to, promotion });
+            
+            if (!move) {
+              console.error('Engine returned invalid move, falling back to random');
+            }
+          }
+        } catch (error) {
+          console.error('Engine error:', error);
+          setEngineError('Engine error - using random move');
+        }
+      }
+      
+      // Fallback to random move if engine failed or unavailable
+      if (!move) {
+        const possibleMoves = chessGame.moves();
+        if (possibleMoves.length === 0) {
+          setEngineThinking(false);
+          return;
+        }
+        const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        move = chessGame.move(randomMove);
+        console.log('Random move:', randomMove);
+      }
       
       if (move) {
         console.log("Computer move:", move);
@@ -425,11 +478,13 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
         // Check game state
         await checkGameOver();
       }
+      
+      setEngineThinking(false);
     };
 
     const timeout = setTimeout(makeComputerMove, 500);
     return () => clearTimeout(timeout);
-  }, [chessPosition, winner, currentGameId, computerColor]);
+  }, [chessPosition, winner, currentGameId, computerColor, engineReady]);
 
   const undoMove = () => {
     const history = chessGame.history({ verbose: true });
@@ -495,6 +550,7 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
   const rotate90 = () => setBoardRotation((prev) => (prev + 90) % 360);
   const rotate180 = () => setBoardRotation((prev) => (prev + 180) % 360);
 
+  const chessboardOptions = { onPieceDrop, onSquareClick, position: chessPosition, squareStyles: optionSquares, boardOrientation };
   return (
     <div
       style={{
@@ -621,62 +677,83 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
         ← Back
       </button>
 
+      {/* Engine Status Indicators */}
+      {!engineReady && (
+        <div
+          style={{
+            position: "absolute",
+            top: "70px",
+            left: "20px",
+            padding: "10px 15px",
+            backgroundColor: "rgba(255,150,0,0.9)",
+            color: "white",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+            fontSize: "12px",
+          }}
+        >
+          ⚠️ Engine Offline (Random Moves)
+        </div>
+      )}
+
+      {engineThinking && (
+        <div
+          style={{
+            position: "absolute",
+            top: "70px",
+            right: "20px",
+            padding: "10px 15px",
+            backgroundColor: "rgba(50,150,255,0.9)",
+            color: "white",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+          }}
+        >
+          🤔 Engine thinking...
+        </div>
+      )}
+
+      {engineError && engineReady && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "20px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            padding: "10px 20px",
+            backgroundColor: "rgba(255,100,100,0.9)",
+            color: "white",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+            maxWidth: "80%",
+            textAlign: "center",
+            fontSize: "14px",
+          }}
+        >
+          {engineError}
+        </div>
+      )}
+
       {/* Chessboard & Controls */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
         <div
           style={{
             border: isCheck ? "4px solid yellow" : "4px solid transparent",
             borderRadius: "12px",
-            transition: "border-color 0.3s ease, transform 0.5s",
+            transition: "border-color 0.3s ease",
             boxShadow: isCheck ? "0 0 20px 4px rgba(255,255,0,0.6)" : "0 4px 12px rgba(0,0,0,0.4)",
             width: boardWidth,
             height: boardWidth,
             margin: "auto",
             transform: `rotate(${boardRotation}deg)`,
+            transition: "transform 0.5s",
           }}
         >
-          <Chessboard
-            key={`${theme}-${boardOrientation}-${boardRotation}`}
-            id={`chessboard-${theme}`}
-            position={chessPosition}
-            onPieceDrop={onPieceDrop}
-            onSquareClick={onSquareClick}
-            squareStyles={optionSquares}
-            boardOrientation={boardOrientation}
-            customDarkSquareStyle={{
-              backgroundColor: boardThemes[theme].dark,
-              transition: "background-color 0.4s ease",
-            }}
-            customLightSquareStyle={{
-              backgroundColor: boardThemes[theme].light,
-              transition: "background-color 0.4s ease",
-            }}
-            boardWidth={boardWidth}
-          />
-        </div>
 
-        {/* 🎨 Theme Selector */}
-        <div style={{ marginTop: "10px", display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
-          <label style={{ color: "#f5f0e1", fontWeight: "bold" }}>Theme:</label>
-          <select
-            value={theme}
-            onChange={(e) => setTheme(e.target.value)}
-            style={{
-              padding: "6px 10px",
-              borderRadius: "6px",
-              border: "1px solid #ccc",
-              backgroundColor: "#f5f0e1",
-              color: "#162447",
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            {Object.keys(boardThemes).map((key) => (
-              <option key={key} value={key}>
-                {key.charAt(0).toUpperCase() + key.slice(1)}
-              </option>
-            ))}
-          </select>
+          <Chessboard options={chessboardOptions} boardWidth={boardWidth} />
         </div>
 
         <div style={{ marginTop: "10px", display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center" }}>
@@ -795,26 +872,11 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
             boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
           }}
         >
-          <p style={{ marginBottom: "10px", fontWeight: "bold", color: "#ff4d4d" }}>Choose Promotion</p>
+        <p style={{ marginBottom: "10px", fontWeight: "bold", color: "#ff4d4d" }}>Choose Promotion</p>
           <div style={{ display: "flex", gap: "15px" }}>
-            {["q", "r", "b", "n"].map((p) => {
+            {["q","r","b","n"].map(p => {
               const Icon = pieceIcons[p];
-              return (
-                <button
-                  key={p}
-                  onClick={() => choosePromotion(p)}
-                  style={{
-                    border: "2px solid #ff4d4d",
-                    borderRadius: "8px",
-                    padding: "10px",
-                    backgroundColor: "#ffe6e6",
-                    cursor: "pointer",
-                    fontSize: "28px",
-                  }}
-                >
-                  <Icon />
-                </button>
-              );
+              return <button key={p} onClick={() => choosePromotion(p)} style={{border:"2px solid #ff4d4d", borderRadius:"8px", padding:"10px", backgroundColor:"#ffe6e6", cursor:"pointer", fontSize:"28px"}}><Icon /></button>
             })}
           </div>
         </div>
