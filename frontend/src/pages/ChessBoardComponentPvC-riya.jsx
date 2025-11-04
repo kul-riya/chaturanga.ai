@@ -697,23 +697,54 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
         </div>
       )}
 
-      {engineThinking && (
-        <div
-          style={{
-            position: "absolute",
-            top: "70px",
-            right: "20px",
-            padding: "10px 15px",
-            backgroundColor: "rgba(50,150,255,0.9)",
-            color: "white",
-            borderRadius: "8px",
-            fontWeight: "bold",
-            boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-          }}
-        >
-          🤔 Engine thinking...
-        </div>
-      )}
+{engineThinking && (
+  <div
+    style={{
+      position: "absolute",
+      top: "70px",
+      right: "20px",
+      padding: "14px 24px",
+      background: "rgba(255, 255, 255, 0.15)",
+      backdropFilter: "blur(10px)",
+      border: "1px solid rgba(255, 255, 255, 0.3)",
+      color: "#fff",
+      borderRadius: "16px",
+      fontWeight: "600",
+      fontSize: "15px",
+      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+      display: "flex",
+      alignItems: "center",
+      gap: "12px",
+      animation: "fadeInSlide 0.3s ease-out",
+    }}
+  >
+    <div style={{
+      width: "8px",
+      height: "8px",
+      borderRadius: "50%",
+      background: "#4ade80",
+      boxShadow: "0 0 10px #4ade80",
+      animation: "blink 1.5s ease-in-out infinite"
+    }} />
+    <span>Engine analyzing...</span>
+    <style>{`
+      @keyframes fadeInSlide {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
+    `}</style>
+  </div>
+)}
 
       {engineError && engineReady && (
         <div
