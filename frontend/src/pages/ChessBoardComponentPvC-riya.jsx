@@ -39,6 +39,7 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
   const [engineReady, setEngineReady] = useState(false);
   const [engineThinking, setEngineThinking] = useState(false);
   const [engineError, setEngineError] = useState(null);
+  const [positionEval, setPositionEval] = useState(0);
 
   const pieceIcons = { q: FaChessQueen, r: FaChessRook, b: FaChessBishop, n: FaChessKnight };
 
@@ -318,7 +319,26 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
     // Check game state
     await checkGameOver();
     
+    if (engineReady && chessGame.turn() !== computerColor) {
+      await getPositionEvaluation();
+    }
+
     return true;
+  };
+
+  const getPositionEvaluation = async () => {
+    if (!engineReady || !currentGameId) return;
+    
+    try {
+      const currentFen = chessGame.fen();
+      const result = await chessEngineService.getBestMove(currentFen, 4);
+      
+      if (result && result.score !== undefined) {
+        setPositionEval(result.score);
+      }
+    } catch (error) {
+      console.error('Error getting position evaluation:', error);
+    }
   };
 
   const onSquareClick = ({ square }) => {
@@ -427,6 +447,9 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
             const promotion = engineMove.length > 4 ? engineMove[4] : undefined;
             
             console.log(`Engine move: ${engineMove}, Score: ${result.score}`);
+            if (result.score !== undefined) {
+              setPositionEval(result.score);
+            }
             
             move = chessGame.move({ from, to, promotion });
             
@@ -745,6 +768,34 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
     `}</style>
   </div>
 )}
+
+      {/* Position Evaluation Display */}
+      {engineReady && currentGameId && (
+        <div
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            padding: "12px 20px",
+            backgroundColor: "rgba(13,37,63,0.9)",
+            color: "#f5f0e1",
+            border: "2px solid #f5f0e1",
+            borderRadius: "8px",
+            fontWeight: "bold",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
+            minWidth: "150px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "12px", marginBottom: "4px" }}>Position Eval</div>
+          <div style={{ fontSize: "20px", color: positionEval > 0 ? "#4ade80" : positionEval < 0 ? "#f87171" : "#ffffff" }}>
+            {positionEval > 0 ? "+" : ""}{(positionEval / 100).toFixed(2)}
+          </div>
+          <div style={{ fontSize: "10px", marginTop: "2px" }}>
+            {positionEval > 0 ? "White advantage" : positionEval < 0 ? "Black advantage" : "Equal"}
+          </div>
+        </div>
+      )}
 
       {engineError && engineReady && (
         <div
