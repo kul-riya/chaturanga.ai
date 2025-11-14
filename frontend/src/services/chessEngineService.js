@@ -29,6 +29,8 @@ export const chessEngineService = {
       }
 
       const data = await response.json();
+      console.log(data);
+      
       return data;
     } catch (error) {
       console.error('Failed to get engine move:', error);

@@ -17,7 +17,7 @@ function initializeEngine() {
   console.log('Starting chess engine...');
   
   // Use the Windows executable
-  const enginePath = path.join(__dirname, 'chess_0x88.exe');
+  const enginePath = path.join(__dirname, 'chess_0x88');
   console.log('Engine path:', enginePath);
   
   engineProcess = spawn(enginePath);
@@ -36,15 +36,15 @@ function initializeEngine() {
     console.error('Engine error:', data.toString());
   });
   
+  engineProcess.on('error', (error) => {
+    console.error('Failed to start engine:', error);
+    isEngineReady = false;
+  });
   engineProcess.on('close', (code) => {
     console.log(`Engine process exited with code ${code}`);
     isEngineReady = false;
   });
   
-  engineProcess.on('error', (error) => {
-    console.error('Failed to start engine:', error);
-    isEngineReady = false;
-  });
   
   // Send UCI initialization commands
   setTimeout(() => {

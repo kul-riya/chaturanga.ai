@@ -127,6 +127,17 @@ export const recordMove = async (moveData) => {
   }
 };
 
+// engine analysis APIs
+export const recordEngineMove = async (moveData) => {
+  try {
+    const response = await api.post('/engine-move', moveData);
+    return response.data;
+  } catch (error) {
+    console.error('Error recording move:', error);
+    throw error;
+  }
+};
+
 // ==================== Metadata APIs ====================
 
 export const getMetadata = async () => {

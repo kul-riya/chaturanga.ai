@@ -144,6 +144,9 @@ def handle_record_move():
         is_check = data.get('is_check', False)
         winner = data.get('winner', None)
         promotion = data.get('promotion', None)
+        eval_score = data.get('eval_score', None)
+        depth = data.get('depth', None)
+        isComputer = data.get('isComputer', None)
         
         # Record move and position
         result = crud.record_move_and_position(
@@ -157,6 +160,16 @@ def handle_record_move():
             winner=winner,
             promotion=promotion
         )
+        
+        if (not isComputer):
+            print(eval_score, isComputer)
+            resultComputer = crud.create_engine_analysis(
+                position_id=result['position_id'],
+                eval_score=eval_score,
+                depth=depth,
+                best_move=move_notation
+            )
+        
         
         return jsonify({
             "success": True,
@@ -175,6 +188,46 @@ def handle_record_move():
             "error": f"Error recording move: {str(e)}"
         }), 500
 
+
+def handle_record_engine_move():
+    try:
+        data = request.json
+        
+        # Validate required fields
+        required_fields = ['position_id', 'eval_score', 'depth', 'best_move']
+        
+        
+        # Extract data
+        position_id = data['position_id']
+        eval_score = data['eval_score']
+        depth = data['depth']
+        best_move = data['best_move']
+        
+        
+        # Record move and position
+        result = crud.create_engine_analysis(
+            position_id=position_id,
+            eval_score=eval_score,
+            depth=depth,
+            best_move=best_move
+        )
+        
+        return jsonify({
+            "success": True,
+            "message": "Move and position recorded successfully",
+            "data": result
+        }), 201
+        
+    except Error as e:
+        return jsonify({
+            "success": False,
+            "error": f"Database error: {str(e)}"
+        }), 500
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Error recording move: {str(e)}"
+        }), 500
 
 def handle_get_metadata():
     """Handle GET /api/metadata - Return all table names, columns, and row counts"""

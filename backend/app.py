@@ -13,7 +13,8 @@ from api_endpoints import (
     handle_update_game,
     handle_create_opening,
     handle_find_or_create_opening,
-    handle_ensure_computer_player
+    handle_ensure_computer_player,
+    handle_record_engine_move
 )
 
 # Initialize Flask app
@@ -57,6 +58,10 @@ def echo():
 def record_move():
     """POST /api/move - Record a move and position from frontend"""
     return handle_record_move()
+
+@app.route('/api/engine-move', methods=['POST'])
+def record_engine_move():
+    return handle_record_engine_move()
 
 @app.route('/api/metadata', methods=['GET'])
 def get_metadata():
