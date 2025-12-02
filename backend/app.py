@@ -41,16 +41,9 @@ with app.app_context():
 def home():
     return jsonify({"message": "Chess Database API", "version": "1.0.0"})
 
-# Example API route (GET)
-@app.route('/hello', methods=['GET'])
-def hello():
-    return jsonify({"message": "Hello from Flask!"})
-
-# Example API route (POST)
-@app.route('/api/echo', methods=['POST'])
-def echo():
-    data = request.json  # get JSON from request body
-    return jsonify({"you_sent": data})
+@app.route("/health")
+def health():
+    return jsonify({"status":"ok"}), 200
 
 # ==================== Database API Endpoints ====================
 
