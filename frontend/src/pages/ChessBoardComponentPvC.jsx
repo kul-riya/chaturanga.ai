@@ -870,13 +870,12 @@ export default function ChessBoardComponentPvC({ playerColour = "white" }) {
           style={{
             border: isCheck ? "4px solid yellow" : "4px solid transparent",
             borderRadius: "12px",
-            transition: "border-color 0.3s ease",
+            transition: "border-color 0.3s ease transform 0.5s",
             boxShadow: isCheck ? "0 0 20px 4px rgba(255,255,0,0.6)" : "0 4px 12px rgba(0,0,0,0.4)",
             width: boardWidth,
             height: boardWidth,
             margin: "auto",
             transform: `rotate(${boardRotation}deg)`,
-            transition: "transform 0.5s",
           }}
         >
 

@@ -17,7 +17,10 @@ function initializeEngine() {
   console.log('Starting chess engine...');
   
   // Use the Windows executable
-  const enginePath = path.join(__dirname, 'chess_0x88');
+   const enginePath = path.join(__dirname, 'chess_0x88');
+  
+  // Linux executable
+  // const enginePath = 'chess_0x88';
   console.log('Engine path:', enginePath);
   
   engineProcess = spawn(enginePath);

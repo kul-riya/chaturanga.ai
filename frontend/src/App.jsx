@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useParams } from "react-router-dom";
-import ChessBoardComponentPvC from "./pages/ChessBoardComponentPvC-riya";
+import ChessBoardComponentPvC from "./pages/ChessBoardComponentPvC";
 import ChessBoardComponentPvP from "./pages/ChessBoardComponentPvP";
 import LandingPage from "./pages/LandingPage";
 import ChessInfoPage from "./pages/ChessInfoPage";
